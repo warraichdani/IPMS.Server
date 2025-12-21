@@ -133,6 +133,75 @@ namespace IPMS.Infrastructure.Repositories
 
             await cmd.ExecuteNonQueryAsync();
         }
+
+        public async Task<IEnumerable<string>> GetUserRolesAsync(Guid userId)
+        {
+            var roles = new List<string>();
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand(@"
+        SELECT R.Name 
+        FROM UserRoles UR
+        INNER JOIN Roles R ON UR.RoleId = R.RoleId
+        WHERE UR.UserId = @UserId", conn);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                roles.Add(reader.GetString(0));
+            }
+            return roles;
+        }
+
+        public async Task StoreRefreshTokenAsync(Guid userId, string token, DateTime expiresAt)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand(@"
+            INSERT INTO RefreshTokens (UserId, Token, ExpiresAt, Revoked)
+            VALUES (@UserId, @Token, @ExpiresAt, 0)", conn);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@Token", token);
+            cmd.Parameters.AddWithValue("@ExpiresAt", expiresAt);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<User?> GetUserByRefreshTokenAsync(string token)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand(@"
+        SELECT U.* 
+        FROM RefreshTokens RT
+        INNER JOIN Users U ON RT.UserId = U.UserId
+        WHERE RT.Token = @Token AND RT.Revoked = 0 AND RT.ExpiresAt > SYSUTCDATETIME()", conn);
+
+            cmd.Parameters.AddWithValue("@Token", token);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return MapUser(reader);
+            }
+            return null;
+        }
+
+        public async Task RevokeRefreshTokenAsync(string token)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand("UPDATE RefreshTokens SET Revoked = 1 WHERE Token = @Token", conn);
+            cmd.Parameters.AddWithValue("@Token", token);
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }
 
