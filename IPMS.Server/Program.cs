@@ -51,6 +51,13 @@ app.MapPost("/api/users/register", async (RegisterUserDto dto, IUserService serv
     return Results.Ok(result);
 });
 
+app.MapPost("/api/auth/confirm-email", async (string email, string otpCode, IEmailConfirmationService service) =>
+{
+    var success = await service.ConfirmEmailAsync(email, otpCode);
+    return success ? Results.Ok(new { message = "Email confirmed successfully." })
+                   : Results.BadRequest(new { message = "Invalid or expired OTP." });
+});
+
 app.MapPost("/api/auth/login", async (LoginRequestDto dto, IAuthService authService) =>
 {
     var result = await authService.LoginAsync(dto);
@@ -62,7 +69,6 @@ app.MapPost("/api/auth/refresh", async (string refreshToken, IAuthService authSe
     var result = await authService.RefreshAsync(refreshToken);
     return result is null ? Results.Unauthorized() : Results.Ok(result);
 });
-
 
 app.MapGet("/api/users", async (IUserService service) =>
 {

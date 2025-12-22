@@ -1,4 +1,5 @@
 ﻿using IPMS.Core.Entities;
+using IPMS.Core.Entities.IPMS.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,5 +21,9 @@ namespace IPMS.Core.Interfaces
         Task StoreRefreshTokenAsync(Guid userId, string token, DateTime expiresAt);
         Task<User?> GetUserByRefreshTokenAsync(string token);
         Task RevokeRefreshTokenAsync(string token);
+        Task StoreOtpAsync(Guid userId, string otpType, string otpCode, DateTime expiry);
+        Task<UserOtp?> GetValidOtpAsync(Guid userId, string otpCode, string otpType);
+        Task MarkOtpUsedAsync(int otpId);
+        Task ConfirmEmailAsync(Guid userId);
     }
 }

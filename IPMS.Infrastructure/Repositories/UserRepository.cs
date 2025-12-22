@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using IPMS.Core.Entities;
 using IPMS.Core.Interfaces;
+using IPMS.Core.Entities.IPMS.Core.Entities;
 
 namespace IPMS.Infrastructure.Repositories
 {
@@ -141,10 +142,10 @@ namespace IPMS.Infrastructure.Repositories
             await conn.OpenAsync();
 
             var cmd = new SqlCommand(@"
-        SELECT R.Name 
-        FROM UserRoles UR
-        INNER JOIN Roles R ON UR.RoleId = R.RoleId
-        WHERE UR.UserId = @UserId", conn);
+            SELECT R.Name 
+            FROM UserRoles UR
+            INNER JOIN Roles R ON UR.RoleId = R.RoleId
+            WHERE UR.UserId = @UserId", conn);
 
             cmd.Parameters.AddWithValue("@UserId", userId);
 
@@ -178,10 +179,10 @@ namespace IPMS.Infrastructure.Repositories
             await conn.OpenAsync();
 
             var cmd = new SqlCommand(@"
-        SELECT U.* 
-        FROM RefreshTokens RT
-        INNER JOIN Users U ON RT.UserId = U.UserId
-        WHERE RT.Token = @Token AND RT.Revoked = 0 AND RT.ExpiresAt > SYSUTCDATETIME()", conn);
+            SELECT U.* 
+            FROM RefreshTokens RT
+            INNER JOIN Users U ON RT.UserId = U.UserId
+            WHERE RT.Token = @Token AND RT.Revoked = 0 AND RT.ExpiresAt > SYSUTCDATETIME()", conn);
 
             cmd.Parameters.AddWithValue("@Token", token);
 
@@ -200,6 +201,80 @@ namespace IPMS.Infrastructure.Repositories
 
             var cmd = new SqlCommand("UPDATE RefreshTokens SET Revoked = 1 WHERE Token = @Token", conn);
             cmd.Parameters.AddWithValue("@Token", token);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task StoreOtpAsync(Guid userId, string otpType, string otpCode, DateTime expiry)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand(@"
+            INSERT INTO UserOtps (UserId, OtpType, OtpCode, ExpiryDateTime, IsUsed, CreatedAt)
+            VALUES (@UserId, @OtpType, @OtpCode, @ExpiryDateTime, 0, @CreatedAt)", conn);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@OtpType", otpType);
+            cmd.Parameters.AddWithValue("@OtpCode", otpCode);
+            cmd.Parameters.AddWithValue("@ExpiryDateTime", expiry);
+            cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<UserOtp?> GetValidOtpAsync(Guid userId, string otpCode, string otpType)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand(@"
+            SELECT TOP 1 * 
+            FROM UserOtps 
+            WHERE UserId = @UserId 
+              AND OtpCode = @OtpCode 
+              AND OtpType = @OtpType 
+              AND IsUsed = 0 
+              AND ExpiryDateTime > @UTCNow", conn);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@OtpCode", otpCode);
+            cmd.Parameters.AddWithValue("@OtpType", otpType);
+            cmd.Parameters.AddWithValue("@UTCNow", DateTime.UtcNow);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new UserOtp
+                {
+                    OtpId = reader.GetInt32(reader.GetOrdinal("OtpId")),
+                    UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+                    OtpType = reader.GetString(reader.GetOrdinal("OtpType")),
+                    OtpCode = reader.GetString(reader.GetOrdinal("OtpCode")),
+                    ExpiryDateTime = reader.GetDateTime(reader.GetOrdinal("ExpiryDateTime")),
+                    IsUsed = reader.GetBoolean(reader.GetOrdinal("IsUsed")),
+                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
+                };
+            }
+            return null;
+        }
+
+        public async Task MarkOtpUsedAsync(int otpId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand("UPDATE UserOtps SET IsUsed = 1 WHERE OtpId = @OtpId", conn);
+            cmd.Parameters.AddWithValue("@OtpId", otpId);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task ConfirmEmailAsync(Guid userId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand("UPDATE Users SET EmailConfirmed = 1 WHERE UserId = @UserId", conn);
+            cmd.Parameters.AddWithValue("@UserId", userId);
             await cmd.ExecuteNonQueryAsync();
         }
     }

@@ -12,6 +12,7 @@ namespace IPMS.Services
     public interface IAuthService
     {
         Task<TokenResponseDto?> LoginAsync(LoginRequestDto dto);
+        Task<TokenResponseDto?> RefreshAsync(string refreshToken);
     }
 
     public class AuthService : IAuthService

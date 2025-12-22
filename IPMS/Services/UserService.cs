@@ -1,6 +1,7 @@
 ﻿using IPMS.Core.Entities;
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -9,7 +10,6 @@ namespace IPMS.Services
     public interface IUserService
     {
         Task<UserDto> RegisterAsync(RegisterUserDto dto);
-        Task<UserDto?> LoginAsync(LoginUserDto dto);
         Task<IEnumerable<UserDto>> GetAllAsync();
         Task SoftDeleteAsync(Guid userId);
     }
@@ -39,18 +39,8 @@ namespace IPMS.Services
 
             await _repo.RegisterAsync(user);
 
-            return new UserDto(user.UserId, user.Email, user.FirstName, user.LastName, user.IsActive);
-        }
-
-        public async Task<UserDto?> LoginAsync(LoginUserDto dto)
-        {
-            var user = await _repo.GetByEmailAsync(dto.Email);
-            if (user == null) return null;
-
-            using var hmac = new HMACSHA512(user.PasswordSalt);
-            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dto.Password));
-
-            if (!computedHash.SequenceEqual(user.PasswordHash)) return null;
+            // Simulation: insert OTP with fixed value "5332"
+            await _repo.StoreOtpAsync(user.UserId, "EmailConfirmation", "5332", DateTime.UtcNow.AddMinutes(10));
 
             return new UserDto(user.UserId, user.Email, user.FirstName, user.LastName, user.IsActive);
         }
