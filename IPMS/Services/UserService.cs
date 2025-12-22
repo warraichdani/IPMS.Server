@@ -1,6 +1,8 @@
 ﻿using IPMS.Core.Entities;
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
+using IPMS.Services.IPMS.Services;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,10 +19,12 @@ namespace IPMS.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _repo;
+        private readonly IEventLogger _logger;
 
-        public UserService(IUserRepository repo)
+        public UserService(IUserRepository repo, IEventLogger logger)
         {
             _repo = repo;
+            _logger = logger;
         }
 
         public async Task<UserDto> RegisterAsync(RegisterUserDto dto)
@@ -42,6 +46,7 @@ namespace IPMS.Services
             // Simulation: insert OTP with fixed value "5332"
             await _repo.StoreOtpAsync(user.UserId, "EmailConfirmation", "5332", DateTime.UtcNow.AddMinutes(10));
 
+            _logger.LogInfo($"New user registered: {user.Email} at {DateTime.UtcNow}.");
             return new UserDto(user.UserId, user.Email, user.FirstName, user.LastName, user.IsActive);
         }
 

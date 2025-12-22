@@ -1,0 +1,36 @@
+{
+  "investmentTypes": [ "Stocks", "Bonds", "RealEstate", "Crypto" ],
+  "investmentStatuses": [ "Active", "Sold", "OnHold" ],
+  "transactionTypes": [ "BuyMore", "PartialSell", "Update" ],
+  "otpTypes": [ "EmailConfirmation", "PhoneConfirmation" ],
+  "translations": {
+    "en": {
+      "Stocks": "Stocks",
+      "Bonds": "Bonds",
+      "RealEstate": "Real Estate",
+      "Crypto": "Crypto",
+      "Active": "Active",
+      "Sold": "Sold",
+      "OnHold": "On Hold",
+      "BuyMore": "Buy More",
+      "PartialSell": "Partial Sell",
+      "Update": "Update",
+      "EmailConfirmation": "Email Confirmation",
+      "PhoneConfirmation": "Phone Confirmation"
+    },
+    "fr": {
+      "Stocks": "Actions",
+      "Bonds": "Obligations",
+      "RealEstate": "Immobilier",
+      "Crypto": "Crypto",
+      "Active": "Actif",
+      "Sold": "Vendu",
+      "OnHold": "En attente",
+      "BuyMore": "Acheter plus",
+      "PartialSell": "Vente partielle",
+      "Update": "Mettre à jour",
+      "EmailConfirmation": "Confirmation par e-mail",
+      "PhoneConfirmation": "Confirmation par téléphone"
+    }
+  }
+}

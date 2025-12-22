@@ -37,6 +37,8 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin", "User"));
 });
 
+builder.Services.AddSingleton<IIPMSConfigService, IPMSConfigService>();
+
 // Register DI
 builder.Services.AddScoped<IUserRepository>(sp =>
     new UserRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -44,6 +46,11 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
+
+app.MapGet("/api/configurations", (IIPMSConfigService service) =>
+{
+    return Results.Ok(service.GetConfigs());
+});
 
 app.MapPost("/api/users/register", async (RegisterUserDto dto, IUserService service) =>
 {

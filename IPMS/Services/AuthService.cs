@@ -1,7 +1,9 @@
 ﻿using IPMS.Core.Entities;
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
+using IPMS.Services.IPMS.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -19,26 +21,36 @@ namespace IPMS.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IConfiguration _config;
+        private readonly IEventLogger _logger;
 
-        public AuthService(IUserRepository userRepo, IConfiguration config)
+        public AuthService(IUserRepository userRepo, IConfiguration config, IEventLogger logger)
         {
             _userRepo = userRepo;
             _config = config;
+            _logger = logger;
         }
 
         public async Task<TokenResponseDto?> LoginAsync(LoginRequestDto dto)
         {
             var user = await _userRepo.GetByEmailAsync(dto.Email);
-            if (user == null || user.IsDeleted) return null;
-
+            if (user == null || user.IsDeleted)
+            {
+                _logger.LogWarning($"Login failed: user with email {dto.Email} not found.");
+                return null;
+            }
             // Validate password
             using var hmac = new System.Security.Cryptography.HMACSHA512(user.PasswordSalt);
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dto.Password));
-            if (!computedHash.SequenceEqual(user.PasswordHash)) return null;
-
+            if (!computedHash.SequenceEqual(user.PasswordHash))
+            {
+                _logger.LogWarning($"Login failed: invalid password for user {dto.Email}.");
+                return null;
+            }
             // Fetch roles from DB
             var roles = await _userRepo.GetUserRolesAsync(user.UserId);
             if (!roles.Any()) roles = new[] { "User" }; // fallback
+
+            _logger.LogInfo($"User {dto.Email} logged in successfully at {DateTime.UtcNow}.");
 
             // Generate Access Token
             var accessToken = GenerateJwtToken(user, roles);

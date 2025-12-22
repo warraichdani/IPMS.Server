@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Configs\IPMSconfigs.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0" />
@@ -17,6 +21,10 @@
     <ProjectReference Include="..\IPMS.Core\IPMS.Core.csproj" />
     <ProjectReference Include="..\IPMS.Infrastructure\IPMS.Infrastructure.csproj" />
     <ProjectReference Include="..\IPMS\IPMS.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Configs\IPMSconfigs.json" />
   </ItemGroup>
 
 </Project>
