@@ -21,9 +21,9 @@ namespace IPMS.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IConfiguration _config;
-        private readonly IEventLogger _logger;
+        private readonly IEventLogger<AuthService> _logger;
 
-        public AuthService(IUserRepository userRepo, IConfiguration config, IEventLogger logger)
+        public AuthService(IUserRepository userRepo, IConfiguration config, IEventLogger<AuthService> logger)
         {
             _userRepo = userRepo;
             _config = config;

@@ -18,9 +18,9 @@ namespace IPMS.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly AppConfigs appConfigs;
-        private readonly IEventLogger _logger;
+        private readonly IEventLogger<EmailConfirmationService> _logger;
 
-        public EmailConfirmationService(IUserRepository userRepo, IEventLogger logger)
+        public EmailConfirmationService(IUserRepository userRepo, IEventLogger<EmailConfirmationService> logger)
         {
             _userRepo = userRepo;
             _logger = logger;

@@ -9,14 +9,14 @@ namespace IPMS.Services
 {
     namespace IPMS.Services
     {
-        public interface IEventLogger
+        public interface IEventLogger<T>
         {
             void LogInfo(string message);
             void LogWarning(string message);
             void LogError(string message, Exception ex);
         }
 
-        public class EventLogger<T> : IEventLogger
+        public class EventLogger<T> : IEventLogger<T>
         {
             private readonly ILogger<T> _logger;
 

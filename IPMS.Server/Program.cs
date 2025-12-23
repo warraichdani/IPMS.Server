@@ -2,6 +2,7 @@ using IPMS.Core.Interfaces;
 using IPMS.DTOs;
 using IPMS.Infrastructure.Repositories;
 using IPMS.Services;
+using IPMS.Services.IPMS.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -44,6 +45,10 @@ builder.Services.AddScoped<IUserRepository>(sp =>
     new UserRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
+
 
 var app = builder.Build();
 
@@ -90,3 +95,5 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
     return Results.NoContent();
 })
 .RequireAuthorization("AdminPolicy");
+
+app.Run();

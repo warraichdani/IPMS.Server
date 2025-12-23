@@ -19,9 +19,9 @@ namespace IPMS.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _repo;
-        private readonly IEventLogger _logger;
+        private readonly IEventLogger<UserService> _logger;
 
-        public UserService(IUserRepository repo, IEventLogger logger)
+        public UserService(IUserRepository repo, IEventLogger<UserService> logger)
         {
             _repo = repo;
             _logger = logger;
