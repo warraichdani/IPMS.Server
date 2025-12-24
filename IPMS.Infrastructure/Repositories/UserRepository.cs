@@ -277,6 +277,95 @@ namespace IPMS.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("@UserId", userId);
             await cmd.ExecuteNonQueryAsync();
         }
+
+        public async Task AddUserRoleAsync(Guid userId, string roleName)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // 1. Get RoleId via helper method
+            var roleId = await GetRoleIdByNameAsync(conn, roleName);
+            if (roleId == null)
+            {
+                throw new InvalidOperationException($"Role '{roleName}' does not exist.");
+            }
+
+            // 2. Check if user already has this role via helper
+            var alreadyAssigned = await UserHasRoleAsync(conn, userId, roleId.Value);
+            if (alreadyAssigned)
+            {
+                return;
+            }
+
+            // 3. Insert new UserRole
+            var insertCmd = new SqlCommand(
+                "INSERT INTO UserRoles (UserId, RoleId) VALUES (@UserId, @RoleId)", conn);
+            insertCmd.Parameters.AddWithValue("@UserId", userId);
+            insertCmd.Parameters.AddWithValue("@RoleId", roleId);
+
+            await insertCmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task RemoveUserRoleAsync(Guid userId, string roleName)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // 1. Get RoleId via helper method
+            var roleId = await GetRoleIdByNameAsync(conn, roleName);
+            if (roleId == null)
+            {
+                throw new InvalidOperationException($"Role '{roleName}' does not exist.");
+            }
+
+            // 2. Check if user actually has this role
+            var hasRole = await UserHasRoleAsync(conn, userId, roleId.Value);
+            if (!hasRole)
+            {
+                return;
+            }
+
+            // 3. Delete from UserRoles
+            var deleteCmd = new SqlCommand(
+                "DELETE FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId", conn);
+            deleteCmd.Parameters.AddWithValue("@UserId", userId);
+            deleteCmd.Parameters.AddWithValue("@RoleId", roleId);
+
+            await deleteCmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Helper method to get RoleId by role name.
+        /// </summary>
+        private async Task<Guid?> GetRoleIdByNameAsync(SqlConnection conn, string roleName)
+        {
+            var cmd = new SqlCommand("SELECT RoleId FROM Roles WHERE Name = @RoleName", conn);
+            cmd.Parameters.AddWithValue("@RoleName", roleName);
+
+            var result = await cmd.ExecuteScalarAsync();
+            if (result == null || result == DBNull.Value)
+            {
+                return null;
+            }
+
+            // Adjust cast depending on schema: Guid or int
+            return (Guid)result;
+        }
+
+        /// <summary>
+        /// Helper method to check if user already has a role.
+        /// </summary>
+        private async Task<bool> UserHasRoleAsync(SqlConnection conn, Guid userId, Guid roleId)
+        {
+            var cmd = new SqlCommand(
+                "SELECT COUNT(1) FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId", conn);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@RoleId", roleId);
+
+            var exists = (int)await cmd.ExecuteScalarAsync();
+            return exists > 0;
+        }
+
     }
 }
 

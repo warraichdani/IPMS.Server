@@ -1,12 +1,17 @@
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
 using IPMS.Infrastructure.Repositories;
+using IPMS.Server.MiddleWare;
+using IPMS.Server.Models;
 using IPMS.Services;
 using IPMS.Services.IPMS.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // Add JWT authentication
 builder.Services.AddAuthentication("Bearer")
@@ -25,6 +30,15 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins("http://localhost:5173") // your React dev server
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
 
 builder.Services.AddAuthorization(options =>
 {
@@ -51,6 +65,15 @@ builder.Services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
 
 
 var app = builder.Build();
+app.UseCors("AllowFrontend");
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.MapGet("/api/configurations", (IIPMSConfigService service) =>
 {
@@ -63,9 +86,9 @@ app.MapPost("/api/users/register", async (RegisterUserDto dto, IUserService serv
     return Results.Ok(result);
 });
 
-app.MapPost("/api/auth/confirm-email", async (string email, string otpCode, IEmailConfirmationService service) =>
+app.MapPost("/api/auth/confirm-email", async (ConfirmEmailRequest request, IEmailConfirmationService service) =>
 {
-    var success = await service.ConfirmEmailAsync(email, otpCode);
+    var success = await service.ConfirmEmailAsync(request.Email, request.Otp);
     return success ? Results.Ok(new { message = "Email confirmed successfully." })
                    : Results.BadRequest(new { message = "Invalid or expired OTP." });
 });

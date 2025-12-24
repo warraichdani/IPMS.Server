@@ -45,6 +45,11 @@ namespace IPMS.Services
             await _userRepo.MarkOtpUsedAsync(otp.OtpId);
             await _userRepo.ConfirmEmailAsync(user.UserId);
 
+            
+            //TODO: take this to DomainDrivenDesing making emailconfirmation an event.
+            const string defaultRole = "User";
+            await _userRepo.AddUserRoleAsync(user.UserId, defaultRole);
+
             _logger.LogInfo($"Email confirmed for user {email} at {DateTime.UtcNow}.");
 
             return true;

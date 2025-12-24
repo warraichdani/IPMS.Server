@@ -25,5 +25,8 @@ namespace IPMS.Core.Interfaces
         Task<UserOtp?> GetValidOtpAsync(Guid userId, string otpCode, string otpType);
         Task MarkOtpUsedAsync(int otpId);
         Task ConfirmEmailAsync(Guid userId);
+        Task AddUserRoleAsync(Guid userId, string roleName);
+        Task RemoveUserRoleAsync(Guid userId, string roleName);
+
     }
 }

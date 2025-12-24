@@ -44,7 +44,7 @@ namespace IPMS.Services
             await _repo.RegisterAsync(user);
 
             // Simulation: insert OTP with fixed value "5332"
-            await _repo.StoreOtpAsync(user.UserId, "EmailConfirmation", "5332", DateTime.UtcNow.AddMinutes(10));
+            await _repo.StoreOtpAsync(user.UserId, "EmailConfirmation", "533222", DateTime.UtcNow.AddMinutes(10));
 
             _logger.LogInfo($"New user registered: {user.Email} at {DateTime.UtcNow}.");
             return new UserDto(user.UserId, user.Email, user.FirstName, user.LastName, user.IsActive);
