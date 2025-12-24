@@ -15,6 +15,7 @@ namespace IPMS.Services
     {
         Task<TokenResponseDto?> LoginAsync(LoginRequestDto dto);
         Task<TokenResponseDto?> RefreshAsync(string refreshToken);
+        Task LogoutAsync(Guid userId, string refreshToken);
     }
 
     public class AuthService : IAuthService
@@ -38,6 +39,13 @@ namespace IPMS.Services
                 _logger.LogWarning($"Login failed: user with email {dto.Email} not found.");
                 return null;
             }
+
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogWarning($"Login failed: user with email {dto.Email} email is not confirmed yet.");
+                return null;
+            }
+
             // Validate password
             using var hmac = new System.Security.Cryptography.HMACSHA512(user.PasswordSalt);
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dto.Password));
@@ -103,6 +111,12 @@ namespace IPMS.Services
             await _userRepo.StoreRefreshTokenAsync(user.UserId, newRefreshToken, DateTime.UtcNow.AddDays(7));
 
             return new TokenResponseDto(accessToken, newRefreshToken);
+        }
+
+        public async Task LogoutAsync(Guid userId, string refreshToken)
+        {
+            await _userRepo.RemoveRefreshTokenAsync(userId, refreshToken);
+            _logger.LogInfo($"User {userId} logged out. Refresh token removed at {DateTime.UtcNow}.");
         }
     }
 }

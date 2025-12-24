@@ -91,7 +91,8 @@ namespace IPMS.Infrastructure.Repositories
                 IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
                 IsDeleted = reader.GetBoolean(reader.GetOrdinal("IsDeleted")),
                 CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                UpdatedAt = reader["UpdatedAt"] as DateTime?
+                UpdatedAt = reader["UpdatedAt"] as DateTime?,
+                EmailConfirmed  = reader.GetBoolean(reader.GetOrdinal("EmailConfirmed"))
             };
         }
 
@@ -319,7 +320,7 @@ namespace IPMS.Infrastructure.Repositories
             }
 
             // 2. Check if user actually has this role
-            var hasRole = await UserHasRoleAsync(conn, userId, roleId.Value);
+            var hasRole = await UserHasRoleAsync(conn, userId, (int)roleId);
             if (!hasRole)
             {
                 return;
@@ -334,10 +335,23 @@ namespace IPMS.Infrastructure.Repositories
             await deleteCmd.ExecuteNonQueryAsync();
         }
 
+        public async Task RemoveRefreshTokenAsync(Guid userId, string refreshToken)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = new SqlCommand(
+                "DELETE FROM RefreshTokens WHERE UserId = @UserId AND Token = @Token", conn);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@Token", refreshToken);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         /// <summary>
         /// Helper method to get RoleId by role name.
         /// </summary>
-        private async Task<Guid?> GetRoleIdByNameAsync(SqlConnection conn, string roleName)
+        private async Task<int?> GetRoleIdByNameAsync(SqlConnection conn, string roleName)
         {
             var cmd = new SqlCommand("SELECT RoleId FROM Roles WHERE Name = @RoleName", conn);
             cmd.Parameters.AddWithValue("@RoleName", roleName);
@@ -349,13 +363,13 @@ namespace IPMS.Infrastructure.Repositories
             }
 
             // Adjust cast depending on schema: Guid or int
-            return (Guid)result;
+            return (int)result;
         }
 
         /// <summary>
         /// Helper method to check if user already has a role.
         /// </summary>
-        private async Task<bool> UserHasRoleAsync(SqlConnection conn, Guid userId, Guid roleId)
+        private async Task<bool> UserHasRoleAsync(SqlConnection conn, Guid userId, int roleId)
         {
             var cmd = new SqlCommand(
                 "SELECT COUNT(1) FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId", conn);

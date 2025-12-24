@@ -1,6 +1,7 @@
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
 using IPMS.Infrastructure.Repositories;
+using IPMS.Server.Extensions;
 using IPMS.Server.MiddleWare;
 using IPMS.Server.Models;
 using IPMS.Services;
@@ -104,6 +105,20 @@ app.MapPost("/api/auth/refresh", async (string refreshToken, IAuthService authSe
     var result = await authService.RefreshAsync(refreshToken);
     return result is null ? Results.Unauthorized() : Results.Ok(result);
 });
+
+app.MapPost("/api/auth/logout", async (
+    HttpContext httpContext,
+    LogoutRequest request,
+    IAuthService authService) =>
+{
+    var userId = httpContext.GetUserId();
+    if (userId == null)
+        return Results.BadRequest("Invalid user id in token.");
+
+    await authService.LogoutAsync(userId.Value, request.RefreshToken);
+    return Results.Ok();
+})
+.RequireAuthorization();
 
 app.MapGet("/api/users", async (IUserService service) =>
 {

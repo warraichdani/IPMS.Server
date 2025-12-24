@@ -27,6 +27,6 @@ namespace IPMS.Core.Interfaces
         Task ConfirmEmailAsync(Guid userId);
         Task AddUserRoleAsync(Guid userId, string roleName);
         Task RemoveUserRoleAsync(Guid userId, string roleName);
-
+        Task RemoveRefreshTokenAsync(Guid userId, string refreshToken);
     }
 }
