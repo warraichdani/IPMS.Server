@@ -32,6 +32,7 @@
         public static readonly InvestmentType Bonds = new("Bonds");
         public static readonly InvestmentType RealEstate = new("RealEstate");
         public static readonly InvestmentType Crypto = new("Crypto");
+        public static readonly InvestmentType MutualFunds = new("MutualFunds");
 
         private InvestmentType(string value) : base(value) { }
 
@@ -42,6 +43,7 @@
                 "Bonds" => Bonds,
                 "RealEstate" => RealEstate,
                 "Crypto" => Crypto,
+                "MutualFunds" => MutualFunds,
                 _ => throw new ArgumentException($"Invalid InvestmentType: {value}")
             };
     }
@@ -66,18 +68,18 @@
 
     public sealed class TransactionType : Enumeration
     {
-        public static readonly TransactionType BuyMore = new("BuyMore");
-        public static readonly TransactionType PartialSell = new("PartialSell");
-        public static readonly TransactionType Update = new("Update");
+        public static readonly TransactionType Buy = new("BuyMore");
+        public static readonly TransactionType Sell = new("PartialSell");
+        //public static readonly TransactionType Update = new("Update");
 
         private TransactionType(string value) : base(value) { }
 
         public static TransactionType From(string value) =>
             value switch
             {
-                "BuyMore" => BuyMore,
-                "PartialSell" => PartialSell,
-                "Update" => Update,
+                "Buy" or "BuyMore" => Buy,
+                "Sell" or "PartialSell" => Sell,
+                //"Update" => Update,
                 _ => throw new ArgumentException($"Invalid TransactionType: {value}")
             };
     }

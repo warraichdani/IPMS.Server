@@ -44,38 +44,58 @@ CREATE TABLE dbo.Portfolios (
 );
 
 CREATE TABLE dbo.Investments (
-    InvestmentId        UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
-    PortfolioId         UNIQUEIDENTIFIER NOT NULL,
-    InvestmentName      NVARCHAR(200) NOT NULL,
-    InvestmentType      NVARCHAR(50) NOT NULL,   -- e.g. 'Stocks','Bonds','Crypto'
-    InitialAmount       DECIMAL(18,2) NOT NULL,
-    PurchaseDate        DATE NOT NULL,
-    Broker              NVARCHAR(200) NULL,
-    Notes               NVARCHAR(1000) NULL,
-    Status              NVARCHAR(50) NOT NULL,   -- e.g. 'Active','Sold','OnHold'
-    IsDeleted           BIT NOT NULL DEFAULT(0),
-    CreatedAt           DATETIME2(0) NOT NULL DEFAULT(SYSUTCDATETIME()),
-    UpdatedAt           DATETIME2(0) NULL,
-    CONSTRAINT FK_Investment_Portfolio FOREIGN KEY (PortfolioId) REFERENCES dbo.Portfolios(PortfolioId),
+    InvestmentId     UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
+    UserId           UNIQUEIDENTIFIER NOT NULL, -- new column
+    InvestmentName   NVARCHAR(200) NOT NULL,
+    InvestmentType   NVARCHAR(50) NOT NULL,   -- e.g. 'Stocks','Bonds','Crypto'
+    InitialAmount    DECIMAL(18,2) NOT NULL,
+    PurchaseDate     DATE NOT NULL,
+    Broker           NVARCHAR(200) NULL,
+    Notes            NVARCHAR(1000) NULL,
+    Status           NVARCHAR(50) NOT NULL,   -- e.g. 'Active','Sold','OnHold'
+    TotalUnits       DECIMAL(18,4) NOT NULL,  -- total units purchased
+    CostBasis        DECIMAL(18,2) NOT NULL,  -- total cost basis
+    UnitPrice        DECIMAL(18,4) NOT NULL,  -- current or purchase unit price
+    IsDeleted        BIT NOT NULL DEFAULT(0),
+    CreatedAt        DATETIME2(0) NOT NULL DEFAULT(SYSUTCDATETIME()),
+    UpdatedAt        DATETIME2(0) NULL,
+    CONSTRAINT FK_Investment_User FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId), -- foreign key
     CONSTRAINT CK_Investment_InitialAmount_Positive CHECK (InitialAmount > 0),
-    CONSTRAINT CK_Investment_PurchaseDate_NotFuture CHECK (PurchaseDate <= CAST(SYSUTCDATETIME() AS DATE))
+    CONSTRAINT CK_Investment_PurchaseDate_NotFuture CHECK (PurchaseDate <= CAST(SYSUTCDATETIME() AS DATE)),
+    CONSTRAINT CK_Investment_TotalUnits_Positive CHECK (TotalUnits > 0),
+    CONSTRAINT CK_Investment_CostBasis_Positive CHECK (CostBasis >= 0),
+    CONSTRAINT CK_Investment_UnitPrice_Positive CHECK (UnitPrice > 0)
 );
+--Drop table dbo.Transactions
 
+-- Transactions table (unchanged except still referencing InvestmentId)
 CREATE TABLE dbo.Transactions (
-    TransactionId       UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
-    InvestmentId        UNIQUEIDENTIFIER NOT NULL,
-    TransactionType     NVARCHAR(50) NOT NULL,   -- e.g. 'BuyMore','PartialSell','Update'
-    Amount              DECIMAL(18,2) NOT NULL,
-    TransactionDate     DATE NOT NULL,
-    Notes               NVARCHAR(1000) NULL,
-    CreatedAt           DATETIME2(0) NOT NULL DEFAULT(SYSUTCDATETIME()),
-    CreatedByUserId     UNIQUEIDENTIFIER NOT NULL,
-    IsDeleted           BIT NOT NULL DEFAULT(0),
+    TransactionId    UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
+    InvestmentId     UNIQUEIDENTIFIER NOT NULL,
+    TransactionType  NVARCHAR(50) NOT NULL,   -- e.g. 'BuyMore','PartialSell'
+    Units DECIMAL(18,4) NOT NULL,
+	UnitPrice DECIMAL(18,4) NOT NULL,
+	TransactionDate  DATE NOT NULL,
+    Notes            NVARCHAR(1000) NULL,
+    CreatedAt        DATETIME2(0) NOT NULL DEFAULT(SYSUTCDATETIME()),
+    CreatedByUserId  UNIQUEIDENTIFIER NOT NULL,
+    IsDeleted        BIT NOT NULL DEFAULT(0),
     CONSTRAINT FK_Transaction_Investment FOREIGN KEY (InvestmentId) REFERENCES dbo.Investments(InvestmentId),
     CONSTRAINT FK_Transaction_CreatedBy FOREIGN KEY (CreatedByUserId) REFERENCES dbo.Users(UserId),
-    CONSTRAINT CK_Transaction_Amount_Positive CHECK (Amount > 0),
     CONSTRAINT CK_Transaction_Date_NotFuture CHECK (TransactionDate <= CAST(SYSUTCDATETIME() AS DATE))
 );
+
+ALTER TABLE Transactions DROP COLUMN Amount;
+
+CREATE TABLE dbo.PriceHistory (
+    PriceHistoryId UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
+    InvestmentId UNIQUEIDENTIFIER NOT NULL,
+    PriceDate DATE NOT NULL,
+    UnitPrice DECIMAL(18,4) NOT NULL,
+    CONSTRAINT FK_PriceHistory_Investment FOREIGN KEY (InvestmentId) REFERENCES dbo.Investments(InvestmentId),
+    CONSTRAINT CK_PriceHistory_UnitPrice_Positive CHECK (UnitPrice > 0)
+);
+
 
 -- ActivityLog
 CREATE TABLE dbo.ActivityLog (

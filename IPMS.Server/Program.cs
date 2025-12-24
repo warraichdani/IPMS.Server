@@ -1,6 +1,9 @@
+using IPMS.Commands;
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
 using IPMS.Infrastructure.Repositories;
+using IPMS.Queries.Allocation;
+using IPMS.Queries.Performance;
 using IPMS.Server.Extensions;
 using IPMS.Server.MiddleWare;
 using IPMS.Server.Models;
@@ -64,7 +67,15 @@ builder.Services.AddScoped<IEmailConfirmationService, EmailConfirmationService>(
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
 
+//----Charts Dependencies starts----
 
+builder.Services.AddScoped<IPerformanceQuery>(sp =>
+    new PerformanceQuery(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IAllocationQuery>(sp =>
+    new AllocationQuery(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+//----Charts Dependencies End-------
 var app = builder.Build();
 app.UseCors("AllowFrontend");
 
@@ -133,5 +144,67 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
     return Results.NoContent();
 })
 .RequireAuthorization("AdminPolicy");
+
+//----------------Investments----------------------
+
+app.MapPost("/investments/buy",
+    (BuyInvestmentCommand cmd,
+     CurrentUser user,
+     IBuyInvestmentService service) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        var response = service.Execute(cmd with { UserId = user.UserId });
+        return Results.Ok(response);
+    })
+.RequireAuthorization();
+
+app.MapPost("api/investments/sell", async (
+    SellInvestmentCommand cmd,
+    CurrentUser user,
+    ISellInvestmentService sellService) =>
+{
+    if (user == null)
+        return Results.BadRequest("Invalid user id in token.");
+
+    var transactionDto = sellService.Execute(cmd with { UserId = user.UserId });
+
+    return Results.Ok(transactionDto);
+}).RequireAuthorization();
+
+app.MapPost("/investments/update-price",
+    (UpdatePriceCommand cmd,
+     CurrentUser user,
+     IUpdatePriceService service) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        var response = service.Execute(cmd with { UserId = user.UserId });
+        return Results.Ok(response);
+    })
+.RequireAuthorization();
+
+
+//--------------Charts-----------------------------
+app.MapGet("/investments/{id}/performance",
+    (CurrentUser user, Guid id, IPerformanceQuery query) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        return Results.Ok(query.GetLast12Months(id, user.UserId));
+    }).RequireAuthorization();
+
+app.MapGet("/portfolio/allocation",
+    (CurrentUser user, IAllocationQuery query) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        return Results.Ok(query.GetByUser(user.UserId));
+    }).RequireAuthorization();
+
 
 app.Run();

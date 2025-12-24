@@ -1,7 +1,7 @@
 {
-  "investmentTypes": [ "Stocks", "Bonds", "RealEstate", "Crypto" ],
+  "investmentTypes": [ "Stocks", "Bonds", "RealEstate", "Crypto", "MutualFunds" ],
   "investmentStatuses": [ "Active", "Sold", "OnHold" ],
-  "transactionTypes": [ "BuyMore", "PartialSell", "Update" ],
+  "transactionTypes": [ "Buy", "Sell", "Update" ],
   "otpTypes": [ "EmailConfirmation", "PhoneConfirmation" ],
   "translations": {
     "en": {
