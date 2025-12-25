@@ -59,8 +59,16 @@ namespace IPMS.Core.Entities
             InvestmentType type,
             decimal initialAmount,
             decimal initialUnitPrice,
-            DateOnly purchaseDate)
+            DateOnly purchaseDate,
+            string? broker,
+            string? notes)
         {
+            if (initialAmount <= 0)
+                throw new InvalidOperationException("Initial amount must be positive.");
+
+            if (initialUnitPrice <= 0)
+                throw new InvalidOperationException("Initial unit price must be positive.");
+
             var units = initialAmount / initialUnitPrice;
 
             var investment = new Investment
@@ -73,18 +81,21 @@ namespace IPMS.Core.Entities
                 PurchaseDate = purchaseDate,
                 TotalUnits = units,
                 CostBasis = initialAmount,
-                CurrentUnitPrice = initialUnitPrice
+                CurrentUnitPrice = initialUnitPrice,
+                Broker = broker,
+                Notes = notes
             };
 
             investment.AddTransaction(Transaction.Buy(
                 investment.InvestmentId,
-                initialAmount,
+                units,
                 initialUnitPrice,
                 purchaseDate,
                 userId));
 
             return investment;
         }
+
 
         // Behavior: Buy more
         public void Buy(decimal amount, decimal unitPrice, DateOnly date, Guid userId)

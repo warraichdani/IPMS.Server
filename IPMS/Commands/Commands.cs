@@ -1,6 +1,21 @@
 ﻿
 namespace IPMS.Commands
 {
+    //--------------Commands for CRUD Operations--------------
+
+    public sealed record CreateInvestmentCommand(
+    string InvestmentName,
+    string InvestmentType,
+    decimal InitialAmount,
+    DateOnly PurchaseDate,
+    string? Broker,
+    string? Notes,
+    decimal InitialUnitPrice = 1m
+);
+
+
+
+    //------------Commands for Behavioral Core-------------
     public sealed record BuyInvestmentCommand(
     Guid InvestmentId,
     decimal Amount,

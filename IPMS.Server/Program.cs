@@ -8,6 +8,7 @@ using IPMS.Server.Extensions;
 using IPMS.Server.MiddleWare;
 using IPMS.Server.Models;
 using IPMS.Services;
+using IPMS.Services.Investments;
 using IPMS.Services.IPMS.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -144,8 +145,21 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
     return Results.NoContent();
 })
 .RequireAuthorization("AdminPolicy");
+//-------------------Investment CRUD-----------------------------------
 
-//----------------Investments----------------------
+app.MapPost("/investments",
+    (CreateInvestmentCommand cmd,
+     CurrentUser user,
+     ICreateInvestmentService service) =>
+    {
+        if (user is null) return Results.Unauthorized();
+
+        var id = service.Execute(cmd, user.UserId);
+        return Results.Created($"/investments/{id}", new { InvestmentId = id });
+    })
+.RequireAuthorization();
+
+//----------------Investments Behaviour----------------------
 
 app.MapPost("/investments/buy",
     (BuyInvestmentCommand cmd,

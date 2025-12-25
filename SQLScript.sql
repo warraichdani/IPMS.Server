@@ -56,17 +56,17 @@ CREATE TABLE dbo.Investments (
     TotalUnits       DECIMAL(18,4) NOT NULL,  -- total units purchased
     CostBasis        DECIMAL(18,2) NOT NULL,  -- total cost basis
     UnitPrice        DECIMAL(18,4) NOT NULL,  -- current or purchase unit price
-    IsDeleted        BIT NOT NULL DEFAULT(0),
+    LastTransactionId UNIQUEIDENTIFIER NULL, 
+	IsDeleted        BIT NOT NULL DEFAULT(0),
     CreatedAt        DATETIME2(0) NOT NULL DEFAULT(SYSUTCDATETIME()),
     UpdatedAt        DATETIME2(0) NULL,
     CONSTRAINT FK_Investment_User FOREIGN KEY (UserId) REFERENCES dbo.Users(UserId), -- foreign key
-    CONSTRAINT CK_Investment_InitialAmount_Positive CHECK (InitialAmount > 0),
+	CONSTRAINT CK_Investment_InitialAmount_Positive CHECK (InitialAmount > 0),
     CONSTRAINT CK_Investment_PurchaseDate_NotFuture CHECK (PurchaseDate <= CAST(SYSUTCDATETIME() AS DATE)),
     CONSTRAINT CK_Investment_TotalUnits_Positive CHECK (TotalUnits > 0),
     CONSTRAINT CK_Investment_CostBasis_Positive CHECK (CostBasis >= 0),
     CONSTRAINT CK_Investment_UnitPrice_Positive CHECK (UnitPrice > 0)
 );
---Drop table dbo.Transactions
 
 -- Transactions table (unchanged except still referencing InvestmentId)
 CREATE TABLE dbo.Transactions (
