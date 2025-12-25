@@ -1,4 +1,5 @@
-﻿using IPMS.Core.Configs;
+﻿using IPMS.Core;
+using IPMS.Core.Configs;
 using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
 using Microsoft.Data.SqlClient;
@@ -11,10 +12,10 @@ namespace IPMS.Infrastructure.Repositories
         private readonly SqlConnection _connection;
         private readonly SqlTransaction _transaction;
 
-        public InvestmentRepository(SqlConnection connection, SqlTransaction transaction)
+        public InvestmentRepository(IUnitOfWork uow)
         {
-            _connection = connection;
-            _transaction = transaction;
+            _connection = uow.Connection;
+            _transaction = uow.Transaction;
         }
 
         public void Add(Investment investment)
@@ -22,9 +23,9 @@ namespace IPMS.Infrastructure.Repositories
             const string sql = @"
     INSERT INTO Investments
     (InvestmentId, UserId, InvestmentName, InvestmentType, Status,
-     PurchaseDate, TotalUnits, CostBasis)
+     PurchaseDate, TotalUnits, CostBasis, InitialAmount, UnitPrice)
     VALUES
-    (@Id, @UserId, @Name, @Type, @Status, @Date, @Units, @CostBasis)";
+    (@Id, @UserId, @Name, @Type, @Status, @Date, @Units, @CostBasis, @InitialAmount, @UnitPrice)";
 
             using var cmd = new SqlCommand(sql, _connection, _transaction);
 
@@ -36,6 +37,8 @@ namespace IPMS.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("@Date", investment.PurchaseDate.ToDateTime(TimeOnly.MinValue));
             cmd.Parameters.AddWithValue("@Units", investment.TotalUnits);
             cmd.Parameters.AddWithValue("@CostBasis", investment.CostBasis);
+            cmd.Parameters.AddWithValue("@InitialAmount", investment.InitialAmount);
+            cmd.Parameters.AddWithValue("@UnitPrice", investment.CurrentUnitPrice);
 
             cmd.ExecuteNonQuery();
         }
@@ -128,7 +131,9 @@ namespace IPMS.Infrastructure.Repositories
             PurchaseDate = @PurchaseDate,
             TotalUnits = @TotalUnits,
             CostBasis = @CostBasis,
-            LastTransactionId = @LastTransactionId
+            LastTransactionId = @LastTransactionId,
+            Broker = @Broker,
+            Notes = @Notes
         WHERE InvestmentId = @InvestmentId";
 
             using var cmd = new SqlCommand(sql, _connection, _transaction);
@@ -140,6 +145,8 @@ namespace IPMS.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("@CostBasis", investment.CostBasis);
             cmd.Parameters.AddWithValue("@LastTransactionId", (object?)investment.LastTransactionId ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@InvestmentId", investment.InvestmentId);
+            cmd.Parameters.AddWithValue("@Broker", investment.Broker);
+            cmd.Parameters.AddWithValue("@Notes", investment.Notes);
 
             cmd.ExecuteNonQuery();
         }

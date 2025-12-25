@@ -24,6 +24,9 @@ namespace IPMS.Core.Entities
         public string? Broker { get; private set; }
         public string? Notes { get; private set; }
         public Guid? LastTransactionId { get; private set; }
+        public Boolean IsDeleted { get; private set; }
+        public DateTime? UpdatedAt { get; private set; }
+        public decimal InitialAmount { get; private set; }
 
         // Aggregate children
         private readonly List<Transaction> _transactions = new();
@@ -60,6 +63,7 @@ namespace IPMS.Core.Entities
             decimal initialAmount,
             decimal initialUnitPrice,
             DateOnly purchaseDate,
+            InvestmentStatus investmentStatus,
             string? broker,
             string? notes)
         {
@@ -77,7 +81,8 @@ namespace IPMS.Core.Entities
                 UserId = userId,
                 InvestmentName = name,
                 InvestmentType = type,
-                Status = InvestmentStatus.Active,
+                Status = investmentStatus,
+                InitialAmount = initialAmount,
                 PurchaseDate = purchaseDate,
                 TotalUnits = units,
                 CostBasis = initialAmount,
@@ -165,6 +170,16 @@ namespace IPMS.Core.Entities
             PurchaseDate = purchaseDate;
             Broker = broker;
             Notes = notes;
+        }
+
+        public void SoftDelete(Guid userId)
+        {
+            if (IsDeleted)
+                throw new InvalidOperationException("Investment already deleted.");
+
+            IsDeleted = true;
+            Status = InvestmentStatus.Sold; // or Archived if you add later
+            UpdatedAt = DateTime.UtcNow;
         }
 
 

@@ -39,6 +39,7 @@ namespace IPMS.Services.Investments
                 cmd.InitialAmount,
                 1,
                 cmd.PurchaseDate,
+                InvestmentStatus.From(cmd.Status),
                 cmd.Broker,
                 cmd.Notes
             );
@@ -46,6 +47,8 @@ namespace IPMS.Services.Investments
             _investmentRepo.Add(investment);
             foreach (var tx in investment.Transactions)
                 _transactionRepo.Add(tx);
+
+            _investmentRepo.Update(investment);
 
             _priceRepo.Add(new PriceHistory(
                 investment.InvestmentId,

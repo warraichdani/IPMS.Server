@@ -68,8 +68,8 @@
 
     public sealed class TransactionType : Enumeration
     {
-        public static readonly TransactionType Buy = new("BuyMore");
-        public static readonly TransactionType Sell = new("PartialSell");
+        public static readonly TransactionType Buy = new("Buy");
+        public static readonly TransactionType Sell = new("Sell");
         //public static readonly TransactionType Update = new("Update");
 
         private TransactionType(string value) : base(value) { }

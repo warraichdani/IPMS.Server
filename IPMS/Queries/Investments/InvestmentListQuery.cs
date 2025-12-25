@@ -1,6 +1,7 @@
 ﻿using IPMS.Models.DTOs.Investments;
 using IPMS.Models.Filters;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace IPMS.Queries.Investments
 {
@@ -8,9 +9,9 @@ namespace IPMS.Queries.Investments
     {
         private readonly string _connectionString;
 
-        public InvestmentListQuery(string connectionString)
+        public InvestmentListQuery(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
         public InvestmentListResultDto Get(Guid userId, InvestmentListFilter filter)

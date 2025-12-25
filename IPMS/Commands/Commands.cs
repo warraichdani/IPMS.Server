@@ -1,4 +1,6 @@
 ﻿
+using IPMS.Core.Configs;
+
 namespace IPMS.Commands
 {
     //--------------Commands for CRUD Operations--------------
@@ -8,6 +10,7 @@ namespace IPMS.Commands
     string InvestmentType,
     decimal InitialAmount,
     DateOnly PurchaseDate,
+    string Status,
     string? Broker,
     string? Notes,
     decimal InitialUnitPrice = 1m
@@ -22,6 +25,10 @@ namespace IPMS.Commands
     string? Notes
 );
 
+    public sealed record DeleteInvestmentsCommand(
+    IReadOnlyList<Guid> InvestmentIds,
+    Guid UserId
+);
 
 
     //------------Commands for Behavioral Core-------------

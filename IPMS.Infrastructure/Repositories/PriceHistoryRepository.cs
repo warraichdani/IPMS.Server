@@ -1,4 +1,5 @@
-﻿using IPMS.Core.Entities;
+﻿using IPMS.Core;
+using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
 using Microsoft.Data.SqlClient;
 
@@ -7,10 +8,10 @@ public sealed class PriceHistoryRepository : IPriceHistoryRepository
     private readonly SqlConnection _connection;
     private readonly SqlTransaction _transaction;
 
-    public PriceHistoryRepository(SqlConnection connection, SqlTransaction transaction)
+    public PriceHistoryRepository(IUnitOfWork uow)
     {
-        _connection = connection;
-        _transaction = transaction;
+        _connection = uow.Connection;
+        _transaction = uow.Transaction;
     }
 
     public void Add(PriceHistory priceHistory)

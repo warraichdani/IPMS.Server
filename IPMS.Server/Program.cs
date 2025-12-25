@@ -5,6 +5,7 @@ using IPMS.Core.Repositories;
 using IPMS.Infrastructure;
 using IPMS.Infrastructure.Repositories;
 using IPMS.Models.DTOs;
+using IPMS.Models.DTOs.Investments;
 using IPMS.Models.Filters;
 using IPMS.Queries.Allocation;
 using IPMS.Queries.Investments;
@@ -17,6 +18,7 @@ using IPMS.Server.Models;
 using IPMS.Services;
 using IPMS.Services.Investments;
 using IPMS.Services.IPMS.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -98,6 +100,8 @@ services.AddScoped<ISellInvestmentService, SellInvestmentService>();
 services.AddScoped<IUpdatePriceService, UpdatePriceService>();
 services.AddScoped<ICreateInvestmentService, CreateInvestmentService>();
 services.AddScoped<IUpdateInvestmentService, UpdateInvestmentService>();
+services.AddScoped<IDeleteInvestmentService, DeleteInvestmentService>();
+services.AddScoped<IDeleteInvestmentsService, DeleteInvestmentsService>();
 
 // ----------------------------
 // Queries
@@ -105,7 +109,7 @@ services.AddScoped<IUpdateInvestmentService, UpdateInvestmentService>();
 services.AddScoped<IInvestmentListQuery, InvestmentListQuery>();
 services.AddScoped<IInvestmentExportQuery, InvestmentExportQuery>();
 services.AddScoped<ITransactionQuery, TransactionQuery>();
-
+services.AddScoped<IInvestmentEditQuery, InvestmentEditQuery>();
 
 //----Charts Dependencies starts----
 
@@ -184,28 +188,31 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
 
 //-------------------Investment CRUD-----------------------------------
 
-app.MapPost("/investments",
+app.MapPost("/api/investments",
     (CreateInvestmentCommand cmd,
-     CurrentUser user,
+     HttpContext ctx,
      ICreateInvestmentService service) =>
     {
-        if (user is null) return Results.Unauthorized();
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
 
-        var id = service.Execute(cmd, user.UserId);
+        var id = service.Execute(cmd, userId.Value);
         return Results.Created($"/investments/{id}", new { InvestmentId = id });
     })
 .RequireAuthorization();
 
-app.MapGet("/investments",
-    (InvestmentListFilter filter,
-     CurrentUser user,
+app.MapGet("/api/investments",
+    ([AsParameters] InvestmentListFilter filter,
+     HttpContext ctx,
      IInvestmentListQuery query) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
         // Get investments for the logged-in user
-        var result = query.Get(user.UserId, filter);
+        var result = query.Get(userId.Value, filter);
 
         // Return in a format suitable for React Query
         return Results.Ok(new
@@ -218,36 +225,56 @@ app.MapGet("/investments",
     })
 .RequireAuthorization();
 
-app.MapPut("/investments/{id}",
+app.MapPut("/api/investments/{id}",
     (Guid id,
      UpdateInvestmentCommand body,
-     CurrentUser user,
+     HttpContext ctx,
      IUpdateInvestmentService service) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
         if (id != body.InvestmentId)
             return Results.BadRequest("InvestmentId mismatch.");
 
-        service.Execute(body, user.UserId);
+        service.Execute(body, userId.Value);
 
         return Results.NoContent();
     })
 .RequireAuthorization();
 
-app.MapGet("/investments/{id}/transactions",
+app.MapGet("/api/investments/{id:guid}",
+    ([FromRoute] Guid id,
+     HttpContext ctx,
+     IInvestmentEditQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var investment = query.Get(id, userId.Value);
+        if (investment is null)
+            return Results.NotFound();
+
+        return Results.Ok(investment);
+    })
+.RequireAuthorization();
+
+
+app.MapGet("/api/investments/{id}/transactions",
     (Guid id,
-     TransactionListFilter filter,
-     CurrentUser user,
+     [AsParameters] TransactionListFilter filter,
+     HttpContext ctx,
      ITransactionQuery query) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
         var transactions = query.GetTransactionsForInvestment(
             id,
-            user.UserId,
+            userId.Value,
             filter,
             out int totalCount);
 
@@ -261,17 +288,50 @@ app.MapGet("/investments/{id}/transactions",
     })
 .RequireAuthorization();
 
-//----------------Investments Export to CSV----------------------
+//app.MapDelete("/api/investments/{id:guid}",
+//    ([FromRoute] Guid id,
+//     HttpContext ctx,
+//     IDeleteInvestmentService service) =>
+//    {
+//        var userId = ctx.GetUserId();
+//        if (userId is null)
+//            return Results.Unauthorized();
 
-app.MapGet("/investments/export",
-    (InvestmentListFilter filter,
-     CurrentUser user,
+//        service.Execute(id, userId.Value);
+//        return Results.NoContent();
+//    })
+//.RequireAuthorization();
+
+//app.MapDelete("/investments",
+//    ([AsParameters] DeleteInvestmentsRequest request,
+//     HttpContext ctx,
+//     IDeleteInvestmentsService service) =>
+//    {
+//        var userId = ctx.GetUserId();
+//        if (userId is null)
+//            return Results.Unauthorized();
+
+//        service.Execute(new DeleteInvestmentsCommand(
+//            request.InvestmentIds,
+//            userId.Value));
+
+//        return Results.NoContent();
+//    })
+//.RequireAuthorization();
+
+
+////----------------Investments Export to CSV----------------------
+
+app.MapGet("/api/investments/export",
+    ([AsParameters] InvestmentListFilter filter,
+     HttpContext ctx,
      IInvestmentExportQuery query) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
-        var data = query.Export(user.UserId, filter);
+        var data = query.Export(userId.Value, filter);
 
         var csv = CsvWriter.Write(
             data,
@@ -303,65 +363,70 @@ app.MapGet("/investments/export",
     })
 .RequireAuthorization();
 
-//----------------Investments Behaviour----------------------
+////----------------Investments Behaviour----------------------
 
-app.MapPost("/investments/buy",
+app.MapPost("/api/investments/buy",
     (BuyInvestmentCommand cmd,
-     CurrentUser user,
+     HttpContext ctx,
      IBuyInvestmentService service) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
-        var response = service.Execute(cmd with { UserId = user.UserId });
+        var response = service.Execute(cmd with { UserId = userId.Value });
         return Results.Ok(response);
     })
 .RequireAuthorization();
 
 app.MapPost("api/investments/sell", async (
     SellInvestmentCommand cmd,
-    CurrentUser user,
+    HttpContext ctx,
     ISellInvestmentService sellService) =>
 {
-    if (user == null)
+    var userId = ctx.GetUserId();
+    if (userId is null)
         return Results.BadRequest("Invalid user id in token.");
 
-    var transactionDto = sellService.Execute(cmd with { UserId = user.UserId });
+    var transactionDto = sellService.Execute(cmd with { UserId = userId.Value });
 
     return Results.Ok(transactionDto);
 }).RequireAuthorization();
 
-app.MapPost("/investments/update-price",
+app.MapPost("/api/investments/update-price",
     (UpdatePriceCommand cmd,
-     CurrentUser user,
+     HttpContext ctx,
      IUpdatePriceService service) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
-        var response = service.Execute(cmd with { UserId = user.UserId });
+        var response = service.Execute(cmd with { UserId = userId.Value });
         return Results.Ok(response);
     })
 .RequireAuthorization();
 
 
-//--------------Charts-----------------------------
-app.MapGet("/investments/{id}/performance",
-    (CurrentUser user, Guid id, IPerformanceQuery query) =>
+////--------------Charts-----------------------------
+app.MapGet("/api/investments/{id}/performance",
+    (HttpContext ctx, Guid id, IPerformanceQuery query) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
-        return Results.Ok(query.GetLast12Months(id, user.UserId));
+        return Results.Ok(query.GetLast12Months(id, userId.Value));
     }).RequireAuthorization();
 
-app.MapGet("/portfolio/allocation",
-    (CurrentUser user, IAllocationQuery query) =>
+app.MapGet("/api/portfolio/allocation",
+    (HttpContext ctx, IAllocationQuery query) =>
     {
-        if (user is null)
+        var userId = ctx.GetUserId();
+        if (userId is null)
             return Results.Unauthorized();
 
-        return Results.Ok(query.GetByUser(user.UserId));
+        return Results.Ok(query.GetByUser(userId.Value));
     }).RequireAuthorization();
 
 

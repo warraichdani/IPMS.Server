@@ -1,4 +1,5 @@
-﻿using IPMS.Core.Configs;
+﻿using IPMS.Core;
+using IPMS.Core.Configs;
 using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
 using Microsoft.Data.SqlClient;
@@ -10,10 +11,10 @@ namespace IPMS.Infrastructure.Repositories
         private readonly SqlConnection _connection;
         private readonly SqlTransaction _transaction;
 
-        public TransactionRepository(SqlConnection connection, SqlTransaction transaction)
+        public TransactionRepository(IUnitOfWork uow)
         {
-            _connection = connection;
-            _transaction = transaction;
+            _connection = uow.Connection;
+            _transaction = uow.Transaction;
         }
         public void Add(Transaction transaction)
         {
