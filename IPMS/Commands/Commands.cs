@@ -13,6 +13,15 @@ namespace IPMS.Commands
     decimal InitialUnitPrice = 1m
 );
 
+    public sealed record UpdateInvestmentCommand(
+    Guid InvestmentId,
+    string InvestmentName,
+    string InvestmentType,
+    DateOnly PurchaseDate,
+    string? Broker,
+    string? Notes
+);
+
 
 
     //------------Commands for Behavioral Core-------------

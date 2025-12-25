@@ -150,6 +150,24 @@ namespace IPMS.Core.Entities
             LastTransactionId = transaction.TransactionId;
         }
 
+        public void UpdateDetails(
+            string name,
+            InvestmentType type,
+            DateOnly purchaseDate,
+            string? broker,
+            string? notes)
+        {
+            if (Status == InvestmentStatus.Sold)
+                throw new InvalidOperationException("Sold investment cannot be updated.");
+
+            InvestmentName = name;
+            InvestmentType = type;
+            PurchaseDate = purchaseDate;
+            Broker = broker;
+            Notes = notes;
+        }
+
+
         public Transaction GetLastTransaction(ITransactionRepository transactionRepo)
         {
             if (!LastTransactionId.HasValue)

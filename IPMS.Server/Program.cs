@@ -1,10 +1,13 @@
 using IPMS.Commands;
 using IPMS.Core.Interfaces;
 using IPMS.DTOs;
+using IPMS.DTOs.Investments;
 using IPMS.Infrastructure.Repositories;
 using IPMS.Queries.Allocation;
+using IPMS.Queries.Investments;
 using IPMS.Queries.Performance;
 using IPMS.Server.Extensions;
+using IPMS.Server.Helpers;
 using IPMS.Server.MiddleWare;
 using IPMS.Server.Models;
 using IPMS.Services;
@@ -156,6 +159,66 @@ app.MapPost("/investments",
 
         var id = service.Execute(cmd, user.UserId);
         return Results.Created($"/investments/{id}", new { InvestmentId = id });
+    })
+.RequireAuthorization();
+
+app.MapPut("/investments/{id}",
+    (Guid id,
+     UpdateInvestmentCommand body,
+     CurrentUser user,
+     IUpdateInvestmentService service) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        if (id != body.InvestmentId)
+            return Results.BadRequest("InvestmentId mismatch.");
+
+        service.Execute(body, user.UserId);
+
+        return Results.NoContent();
+    })
+.RequireAuthorization();
+
+//----------------Investments Export to CSV----------------------
+
+app.MapGet("/investments/export",
+    (InvestmentListFilter filter,
+     CurrentUser user,
+     IInvestmentExportQuery query) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        var data = query.Export(user.UserId, filter);
+
+        var csv = CsvWriter.Write(
+            data,
+            new[]
+            {
+            "Name",
+            "Type",
+            "Amount",
+            "Current Value",
+            "Gain/Loss %",
+            "Date",
+            "Status"
+            },
+            r => new[]
+            {
+            r.InvestmentName,
+            r.InvestmentType,
+            r.Amount.ToString("0.00"),
+            r.CurrentValue.ToString("0.00"),
+            r.GainLossPercent.ToString("0.00"),
+            r.PurchaseDate.ToString("yyyy-MM-dd"),
+            r.Status
+            });
+
+        return Results.File(
+            csv,
+            "text/csv",
+            $"investments_{DateTime.UtcNow:yyyyMMdd}.csv");
     })
 .RequireAuthorization();
 
