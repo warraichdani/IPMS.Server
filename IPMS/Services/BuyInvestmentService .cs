@@ -2,7 +2,7 @@
 using IPMS.Core;
 using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
-using IPMS.DTOs;
+using IPMS.Models.DTOs;
 
 namespace IPMS.Services
 {

@@ -1,4 +1,4 @@
-﻿namespace IPMS.DTOs.Investments
+﻿namespace IPMS.Models.DTOs.Investments
 {
     public sealed record InvestmentListItemDto(
     Guid InvestmentId,

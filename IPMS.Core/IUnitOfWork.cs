@@ -1,7 +1,8 @@
 ﻿
 namespace IPMS.Core;
 
-public interface IUnitOfWork
+public interface IUnitOfWork : IDisposable
 {
     void Commit();
+    void Rollback();
 }

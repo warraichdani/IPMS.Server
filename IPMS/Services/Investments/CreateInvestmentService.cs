@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace IPMS.Services.Investments
 {
-    internal class CreateInvestmentService : ICreateInvestmentService
+    public class CreateInvestmentService : ICreateInvestmentService
     {
         private readonly IInvestmentRepository _investmentRepo;
         private readonly ITransactionRepository _transactionRepo;

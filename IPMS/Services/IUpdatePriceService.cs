@@ -1,5 +1,5 @@
 ﻿using IPMS.Commands;
-using IPMS.DTOs;
+using IPMS.Models.DTOs;
 namespace IPMS.Services
 {
     public interface IUpdatePriceService

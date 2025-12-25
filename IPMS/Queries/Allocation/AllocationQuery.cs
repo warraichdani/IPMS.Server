@@ -1,5 +1,6 @@
-﻿using IPMS.DTOs;
+﻿using IPMS.Models.DTOs;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace IPMS.Queries.Allocation
 {
@@ -7,9 +8,9 @@ namespace IPMS.Queries.Allocation
     {
         private readonly string _connectionString;
 
-        public AllocationQuery(string connectionString)
+        public AllocationQuery(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
         public IReadOnlyList<AllocationDto> GetByUser(Guid userId)

@@ -1,6 +1,6 @@
-﻿
-using IPMS.DTOs;
+﻿using IPMS.Models.DTOs;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace IPMS.Queries.Performance
 {
@@ -8,9 +8,9 @@ namespace IPMS.Queries.Performance
     {
         private readonly string _connectionString;
 
-        public PerformanceQuery(string connectionString)
+        public PerformanceQuery(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
         public IReadOnlyList<PerformancePointDto> GetLast12Months(Guid investmentId, Guid userId)

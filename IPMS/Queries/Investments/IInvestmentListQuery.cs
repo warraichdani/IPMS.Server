@@ -1,4 +1,5 @@
-﻿using IPMS.DTOs.Investments;
+﻿using IPMS.Models.DTOs.Investments;
+using IPMS.Models.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;

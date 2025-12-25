@@ -1,8 +1,8 @@
-﻿using System.Data;
-using Microsoft.Data.SqlClient;
-using IPMS.Core.Entities;
-using IPMS.Core.Interfaces;
+﻿using IPMS.Core.Entities;
 using IPMS.Core.Entities.IPMS.Core.Entities;
+using IPMS.Core.Interfaces;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace IPMS.Infrastructure.Repositories
 {
@@ -10,9 +10,9 @@ namespace IPMS.Infrastructure.Repositories
     {
         private readonly string _connectionString;
 
-        public UserRepository(string connectionString)
+        public UserRepository(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
         public async Task<User?> GetByEmailAsync(string email)

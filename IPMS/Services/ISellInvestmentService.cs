@@ -1,5 +1,5 @@
 ﻿using IPMS.Commands;
-using IPMS.DTOs;
+using IPMS.Models.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;

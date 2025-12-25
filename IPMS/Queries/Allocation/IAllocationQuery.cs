@@ -1,4 +1,4 @@
-﻿using IPMS.DTOs;
+﻿using IPMS.Models.DTOs;
 
 namespace IPMS.Queries.Allocation;
 

@@ -1,6 +1,6 @@
 ﻿using IPMS.Core.Entities;
 using IPMS.Core.Interfaces;
-using IPMS.DTOs;
+using IPMS.Models.DTOs;
 using IPMS.Services.IPMS.Services;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;

@@ -1,4 +1,5 @@
-﻿using IPMS.DTOs.Investments;
+﻿using IPMS.Models.DTOs.Investments;
+using IPMS.Models.Filters;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -9,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace IPMS.Queries.Investments
 {
-    internal sealed class InvestmentExportQuery : IInvestmentExportQuery
+    public sealed class InvestmentExportQuery : IInvestmentExportQuery
     {
         private readonly string _connectionString;
 
         public InvestmentExportQuery(IConfiguration config)
         {
-            _connectionString = config.GetConnectionString("Default")!;
+            _connectionString = config.GetConnectionString("DefaultConnection")!;
         }
 
         public IReadOnlyList<InvestmentExportRowDto> Export(

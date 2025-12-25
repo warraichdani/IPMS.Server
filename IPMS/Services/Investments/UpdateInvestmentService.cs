@@ -5,7 +5,7 @@ using IPMS.Core.Repositories;
 
 namespace IPMS.Services.Investments
 {
-    internal sealed class UpdateInvestmentService : IUpdateInvestmentService
+    public sealed class UpdateInvestmentService : IUpdateInvestmentService
     {
         private readonly IInvestmentRepository _investmentRepo;
         private readonly IUnitOfWork _uow;

@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace IPMS.Infrastructure.Repositories
 {
-    internal class TransactionRepository : ITransactionRepository
+    public class TransactionRepository : ITransactionRepository
     {
         private readonly SqlConnection _connection;
         private readonly SqlTransaction _transaction;

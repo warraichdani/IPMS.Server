@@ -1,4 +1,4 @@
-﻿namespace IPMS.DTOs
+﻿namespace IPMS.Models.DTOs
 {
     public record RegisterUserDto(string Email, string FirstName, string? LastName, string Password);
     public record LoginUserDto(string Email, string Password);

@@ -1,11 +1,15 @@
 using IPMS.Commands;
+using IPMS.Core;
 using IPMS.Core.Interfaces;
-using IPMS.DTOs;
-using IPMS.DTOs.Investments;
+using IPMS.Core.Repositories;
+using IPMS.Infrastructure;
 using IPMS.Infrastructure.Repositories;
+using IPMS.Models.DTOs;
+using IPMS.Models.Filters;
 using IPMS.Queries.Allocation;
 using IPMS.Queries.Investments;
 using IPMS.Queries.Performance;
+using IPMS.Queries.Transactions;
 using IPMS.Server.Extensions;
 using IPMS.Server.Helpers;
 using IPMS.Server.MiddleWare;
@@ -18,11 +22,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+var services = builder.Services;
+
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
 
 // Add JWT authentication
-builder.Services.AddAuthentication("Bearer")
+services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -38,7 +44,7 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-builder.Services.AddCors(options =>
+services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
@@ -48,36 +54,63 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
-builder.Services.AddAuthorization(options =>
+services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPolicy", policy =>
         policy.RequireRole("Admin"));
 });
 
-builder.Services.AddAuthorization(options =>
+services.AddAuthorization(options =>
 {
     options.AddPolicy("OwnerPolicy", policy =>
         policy.RequireRole("Admin", "User"));
 });
 
-builder.Services.AddSingleton<IIPMSConfigService, IPMSConfigService>();
+services.AddSingleton<IIPMSConfigService, IPMSConfigService>();
+services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
 
-// Register DI
-builder.Services.AddScoped<IUserRepository>(sp =>
-    new UserRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
+// ----------------------------
+// Services Users
+// ----------------------------
+services.AddScoped<IUserService, UserService>();
+services.AddScoped<IAuthService, AuthService>();
+services.AddScoped<IEmailConfirmationService, EmailConfirmationService>();
+services.AddScoped<ITokenService, TokenService>();
+
+// ----------------------------
+// Repositories
+// ----------------------------
+services.AddScoped<IUserRepository, UserRepository>();
+services.AddScoped<IInvestmentRepository, InvestmentRepository>();
+services.AddScoped<ITransactionRepository, TransactionRepository>();
+services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
+
+// ----------------------------
+// Unit of Work
+// ----------------------------
+services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// ----------------------------
+// Application Services (Commands)
+// ----------------------------
+services.AddScoped<IBuyInvestmentService, BuyInvestmentService>();
+services.AddScoped<ISellInvestmentService, SellInvestmentService>();
+services.AddScoped<IUpdatePriceService, UpdatePriceService>();
+services.AddScoped<ICreateInvestmentService, CreateInvestmentService>();
+services.AddScoped<IUpdateInvestmentService, UpdateInvestmentService>();
+
+// ----------------------------
+// Queries
+// ----------------------------
+services.AddScoped<IInvestmentListQuery, InvestmentListQuery>();
+services.AddScoped<IInvestmentExportQuery, InvestmentExportQuery>();
+services.AddScoped<ITransactionQuery, TransactionQuery>();
+
 
 //----Charts Dependencies starts----
 
-builder.Services.AddScoped<IPerformanceQuery>(sp =>
-    new PerformanceQuery(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<IAllocationQuery>(sp =>
-    new AllocationQuery(builder.Configuration.GetConnectionString("DefaultConnection")));
+services.AddScoped<IPerformanceQuery, PerformanceQuery>();
+services.AddScoped<IAllocationQuery, AllocationQuery>();
 
 //----Charts Dependencies End-------
 var app = builder.Build();
@@ -148,6 +181,7 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
     return Results.NoContent();
 })
 .RequireAuthorization("AdminPolicy");
+
 //-------------------Investment CRUD-----------------------------------
 
 app.MapPost("/investments",
@@ -159,6 +193,28 @@ app.MapPost("/investments",
 
         var id = service.Execute(cmd, user.UserId);
         return Results.Created($"/investments/{id}", new { InvestmentId = id });
+    })
+.RequireAuthorization();
+
+app.MapGet("/investments",
+    (InvestmentListFilter filter,
+     CurrentUser user,
+     IInvestmentListQuery query) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        // Get investments for the logged-in user
+        var result = query.Get(user.UserId, filter);
+
+        // Return in a format suitable for React Query
+        return Results.Ok(new
+        {
+            Items = result.Items,
+            TotalCount = result.TotalCount,
+            Page = result.Page,
+            PageSize = result.PageSize
+        });
     })
 .RequireAuthorization();
 
@@ -177,6 +233,31 @@ app.MapPut("/investments/{id}",
         service.Execute(body, user.UserId);
 
         return Results.NoContent();
+    })
+.RequireAuthorization();
+
+app.MapGet("/investments/{id}/transactions",
+    (Guid id,
+     TransactionListFilter filter,
+     CurrentUser user,
+     ITransactionQuery query) =>
+    {
+        if (user is null)
+            return Results.Unauthorized();
+
+        var transactions = query.GetTransactionsForInvestment(
+            id,
+            user.UserId,
+            filter,
+            out int totalCount);
+
+        return Results.Ok(new
+        {
+            Items = transactions,
+            TotalCount = totalCount,
+            Page = filter.Page,
+            PageSize = filter.PageSize
+        });
     })
 .RequireAuthorization();
 
