@@ -13,6 +13,7 @@ namespace IPMS.Models.DTOs.Investments
     decimal TotalUnits,
     decimal UnitPrice,
     string? Broker,
-    string? Notes
+    string? Notes,
+    decimal InitialAmount
 );
 }

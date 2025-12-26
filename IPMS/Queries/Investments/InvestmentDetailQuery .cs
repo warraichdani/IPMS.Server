@@ -26,7 +26,8 @@ SELECT
     TotalUnits,
     UnitPrice,
     Broker,
-    Notes
+    Notes,
+    InitialAmount
 FROM Investments
 WHERE InvestmentId = @InvestmentId
   AND UserId = @UserId
@@ -67,7 +68,8 @@ WHERE InvestmentId = @InvestmentId
                 totalUnits,
                 unitPrice,
                 reader.IsDBNull(8) ? null : reader.GetString(8),
-                reader.IsDBNull(9) ? null : reader.GetString(9)
+                reader.IsDBNull(9) ? null : reader.GetString(9),
+                reader.GetDecimal(10)
             );
         }
     }

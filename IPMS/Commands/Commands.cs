@@ -48,7 +48,7 @@ namespace IPMS.Commands
 
     public sealed record UpdatePriceCommand(
      Guid InvestmentId,
-     decimal UnitPrice,
+     decimal Amount,
      DateOnly Date,
      Guid UserId);
 }

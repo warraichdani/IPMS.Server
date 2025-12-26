@@ -6,7 +6,7 @@ public interface ITransactionRepository
 {
     IReadOnlyList<Transaction> GetByInvestmentId(Guid investmentId);
 
-    void Add(Transaction transaction);
+    Guid Add(Transaction transaction);
 
     Transaction? GetById(Guid transactionId);
 }

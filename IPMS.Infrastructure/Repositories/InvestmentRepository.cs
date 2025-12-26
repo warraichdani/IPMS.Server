@@ -2,6 +2,7 @@
 using IPMS.Core.Configs;
 using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
+using IPMS.Infrastructure.SQLServer;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
@@ -129,6 +130,7 @@ namespace IPMS.Infrastructure.Repositories
             InvestmentType = @Type,
             Status = @Status,
             PurchaseDate = @PurchaseDate,
+            UnitPrice = @UnitPrice,
             TotalUnits = @TotalUnits,
             CostBasis = @CostBasis,
             LastTransactionId = @LastTransactionId,
@@ -141,12 +143,13 @@ namespace IPMS.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("@Type", investment.InvestmentType.Value);
             cmd.Parameters.AddWithValue("@Status", investment.Status.Value);
             cmd.Parameters.AddWithValue("@PurchaseDate", investment.PurchaseDate.ToDateTime(TimeOnly.MinValue));
+            cmd.Parameters.AddWithValue("@UnitPrice", investment.CurrentUnitPrice);
             cmd.Parameters.AddWithValue("@TotalUnits", investment.TotalUnits);
             cmd.Parameters.AddWithValue("@CostBasis", investment.CostBasis);
-            cmd.Parameters.AddWithValue("@LastTransactionId", (object?)investment.LastTransactionId ?? DBNull.Value);
+            cmd.Parameters.AddNullable("@LastTransactionId", investment.LastTransactionId);
+            cmd.Parameters.AddNullable("@Broker", investment.Broker);
+            cmd.Parameters.AddNullable("@Notes", investment.Notes);
             cmd.Parameters.AddWithValue("@InvestmentId", investment.InvestmentId);
-            cmd.Parameters.AddWithValue("@Broker", investment.Broker);
-            cmd.Parameters.AddWithValue("@Notes", investment.Notes);
 
             cmd.ExecuteNonQuery();
         }
@@ -161,8 +164,11 @@ namespace IPMS.Infrastructure.Repositories
                 InvestmentStatus.From(reader.GetString(reader.GetOrdinal("Status"))),
                 DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))),
                 reader.GetDecimal(reader.GetOrdinal("TotalUnits")),
+                reader.GetDecimal(reader.GetOrdinal("UnitPrice")),
                 reader.GetDecimal(reader.GetOrdinal("CostBasis")),
-                reader.GetGuid(reader.GetOrdinal("LastTransactionId"))
+                reader.GetGuid(reader.GetOrdinal("LastTransactionId")),
+                reader.GetString(reader.GetOrdinal("Broker")),
+                reader.GetString(reader.GetOrdinal("Notes"))
             );
         }
 

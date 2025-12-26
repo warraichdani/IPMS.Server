@@ -16,18 +16,31 @@ namespace IPMS.Infrastructure.Repositories
             _connection = uow.Connection;
             _transaction = uow.Transaction;
         }
-        public void Add(Transaction transaction)
+        public Guid Add(Transaction transaction)
         {
             const string sql = @"
-    INSERT INTO Transactions
-    (TransactionId, InvestmentId, TransactionType,
-     Units, UnitPrice, TransactionDate, CreatedByUserId)
-    VALUES
-    (@Id, @InvestmentId, @Type, @Units, @Price, @Date, @UserId)";
+            INSERT INTO Transactions
+            (
+                InvestmentId,
+                TransactionType,
+                Units,
+                UnitPrice,
+                TransactionDate,
+                CreatedByUserId
+            )
+            OUTPUT INSERTED.TransactionId
+            VALUES
+            (
+                @InvestmentId,
+                @Type,
+                @Units,
+                @Price,
+                @Date,
+                @UserId
+            );";
 
             using var cmd = new SqlCommand(sql, _connection, _transaction);
 
-            cmd.Parameters.AddWithValue("@Id", transaction.TransactionId);
             cmd.Parameters.AddWithValue("@InvestmentId", transaction.InvestmentId);
             cmd.Parameters.AddWithValue("@Type", transaction.Type.Value);
             cmd.Parameters.AddWithValue("@Units", transaction.Units);
@@ -35,8 +48,11 @@ namespace IPMS.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("@Date", transaction.TransactionDate.ToDateTime(TimeOnly.MinValue));
             cmd.Parameters.AddWithValue("@UserId", transaction.CreatedByUserId);
 
-            cmd.ExecuteNonQuery();
+            var result = cmd.ExecuteScalar();
+
+            return (Guid)result!;
         }
+
 
 
         public Transaction? GetById(Guid transactionId)

@@ -42,8 +42,11 @@ namespace IPMS.Core.Entities
     InvestmentStatus status,
     DateOnly purchaseDate,
     decimal totalUnits,
+    decimal unitPrice,
     decimal costBasis,
-    Guid lastTransactionId)
+    Guid lastTransactionId,
+    string broker,
+    string notes)
         {
             InvestmentId = investmentId;
             UserId = userId;
@@ -53,7 +56,10 @@ namespace IPMS.Core.Entities
             PurchaseDate = purchaseDate;
             TotalUnits = totalUnits;
             CostBasis = costBasis;
+            CurrentUnitPrice = unitPrice; 
             LastTransactionId = lastTransactionId;
+            Broker = broker;
+            Notes = notes;
         }
         // Factory (important in DDD)
         public static Investment Create(
@@ -103,7 +109,7 @@ namespace IPMS.Core.Entities
 
 
         // Behavior: Buy more
-        public void Buy(decimal amount, decimal unitPrice, DateOnly date, Guid userId)
+        public Transaction Buy(decimal amount, decimal unitPrice, DateOnly date, Guid userId)
         {
             var units = amount / unitPrice;
 
@@ -111,12 +117,16 @@ namespace IPMS.Core.Entities
             CostBasis += amount;
             CurrentUnitPrice = unitPrice;
 
-            _transactions.Add(Transaction.Buy(
-                InvestmentId, amount, unitPrice, date, userId));
+            var newTransaction = Transaction.Buy(
+                InvestmentId, amount, unitPrice, date, userId);
+
+            _transactions.Add(newTransaction);
+
+            return newTransaction;
         }
 
         // Behavior: Sell
-        public void Sell(decimal unitsToSell, decimal unitPrice, DateOnly date, Guid userId)
+        public Transaction Sell(decimal unitsToSell, decimal unitPrice, DateOnly date, Guid userId)
         {
             if (unitsToSell > TotalUnits)
                 throw new InvalidOperationException("Cannot sell more units than owned.");
@@ -128,17 +138,24 @@ namespace IPMS.Core.Entities
             CostBasis -= costRemoved;
             CurrentUnitPrice = unitPrice;
 
-            _transactions.Add(Transaction.Sell(
-                InvestmentId, unitsToSell, unitPrice, date, userId));
+            var newTransaction = Transaction.Sell(
+                InvestmentId, unitsToSell, unitPrice, date, userId);
+
+            _transactions.Add(newTransaction);
 
             if (TotalUnits == 0)
                 Status = InvestmentStatus.Sold;
+
+            return newTransaction;
         }
 
         // Valuation update (NOT a transaction)
-        public void UpdateMarketPrice(decimal unitPrice)
+        public void UpdateCurrentPrice(decimal amount)
         {
-            CurrentUnitPrice = unitPrice;
+            if (amount < 0)
+                throw new InvalidOperationException("New pricing must be positive.");
+
+            CurrentUnitPrice = amount / TotalUnits;
         }
 
         // Derived (not stored)
@@ -147,12 +164,12 @@ namespace IPMS.Core.Entities
         public void AddTransaction(Transaction transaction)
         {
             _transactions.Add(transaction);
-            UpdateLastTransaction(transaction);
+            UpdateLastTransaction(transaction.TransactionId);
         }
 
-        public void UpdateLastTransaction(Transaction transaction)
+        public void UpdateLastTransaction(Guid transactionId)
         {
-            LastTransactionId = transaction.TransactionId;
+            LastTransactionId = transactionId;
         }
 
         public void UpdateDetails(

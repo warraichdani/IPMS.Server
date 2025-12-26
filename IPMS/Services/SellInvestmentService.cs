@@ -29,12 +29,9 @@ namespace IPMS.Services
             var investment = _investmentRepo.GetById(cmd.InvestmentId)
                 ?? throw new InvalidOperationException("Investment not found.");
 
-            investment.Sell(cmd.UnitsToSell, cmd.UnitPrice, cmd.Date, cmd.UserId);
-
+            var transaction = investment.Sell(cmd.UnitsToSell, cmd.UnitPrice, cmd.Date, cmd.UserId);
+            investment.UpdateLastTransaction(_transactionRepo.Add(transaction));
             _investmentRepo.Update(investment);
-
-            var transaction = investment.GetLastTransaction(_transactionRepo);
-            _transactionRepo.Add(transaction);
 
             _priceRepo.Add(new PriceHistory(
                 cmd.InvestmentId,

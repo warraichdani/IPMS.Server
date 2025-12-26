@@ -1,9 +1,4 @@
 ﻿using IPMS.Core.Configs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IPMS.Core.Entities
 {
@@ -47,7 +42,6 @@ namespace IPMS.Core.Entities
         {
             return new Transaction
             {
-                TransactionId = Guid.NewGuid(),
                 InvestmentId = investmentId,
                 Type = TransactionType.Buy,
                 Amount = amount,

@@ -21,13 +21,15 @@ INSERT INTO PriceHistory (
     PriceHistoryId,
     InvestmentId,
     PriceDate,
-    UnitPrice
+    UnitPrice,
+    CreatedAt
 )
 VALUES (
     @Id,
     @InvestmentId,
     @PriceDate,
-    @UnitPrice
+    @UnitPrice,
+    @CreatedAt
 );";
 
         using var cmd = new SqlCommand(sql, _connection, _transaction);
@@ -37,6 +39,7 @@ VALUES (
             "@PriceDate",
             priceHistory.PriceDate.ToDateTime(TimeOnly.MinValue));
         cmd.Parameters.AddWithValue("@UnitPrice", priceHistory.UnitPrice);
+        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
 
         cmd.ExecuteNonQuery();
     }

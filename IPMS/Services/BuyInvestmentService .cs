@@ -3,6 +3,7 @@ using IPMS.Core;
 using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
 using IPMS.Models.DTOs;
+using System.Transactions;
 
 namespace IPMS.Services
 {
@@ -30,12 +31,9 @@ namespace IPMS.Services
             var investment = _investmentRepo.GetById(cmd.InvestmentId)
                 ?? throw new InvalidOperationException("Investment not found.");
 
-            investment.Buy(cmd.Amount, cmd.UnitPrice, cmd.Date, cmd.UserId);
-
+            var transaction = investment.Buy(cmd.Amount, cmd.UnitPrice, cmd.Date, cmd.UserId);
+            investment.UpdateLastTransaction(_transactionRepo.Add(transaction));
             _investmentRepo.Update(investment);
-
-            var transaction = investment.GetLastTransaction(_transactionRepo);
-            _transactionRepo.Add(transaction);
 
             _priceRepo.Add(new PriceHistory(
                 cmd.InvestmentId,

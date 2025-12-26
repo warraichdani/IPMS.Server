@@ -35,18 +35,22 @@ namespace IPMS.Services
             if (investment.UserId != cmd.UserId)
                 throw new InvalidOperationException("Unauthorized investment access.");
 
+            investment.UpdateCurrentPrice(cmd.Amount);
+
+            _investmentRepo.Update(investment);
+
             _priceRepo.Add(new PriceHistory(
                 cmd.InvestmentId,
                 cmd.Date,
-                cmd.UnitPrice));
+                investment.CurrentUnitPrice));
 
             _uow.Commit();
 
             return new UpdatePriceResponse(
                 cmd.InvestmentId,
-                cmd.UnitPrice,
+                investment.CurrentUnitPrice,
                 cmd.Date,
-                investment.TotalUnits * cmd.UnitPrice
+                investment.TotalUnits * investment.CurrentUnitPrice
             );
         }
     }
