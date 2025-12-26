@@ -49,7 +49,7 @@
     Guid InvestmentId,
     decimal UnitPrice,
     DateOnly PriceDate,
-    decimal MarketValue // Units * UnitPrice
+    decimal MarketValue
     );
 
     //------------------------DTOs for charts------------------------------

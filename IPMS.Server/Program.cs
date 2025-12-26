@@ -109,7 +109,7 @@ services.AddScoped<IDeleteInvestmentsService, DeleteInvestmentsService>();
 services.AddScoped<IInvestmentListQuery, InvestmentListQuery>();
 services.AddScoped<IInvestmentExportQuery, InvestmentExportQuery>();
 services.AddScoped<ITransactionQuery, TransactionQuery>();
-services.AddScoped<IInvestmentEditQuery, InvestmentEditQuery>();
+services.AddScoped<IInvestmentDetailQuery, InvestmentDetailQuery>();
 
 //----Charts Dependencies starts----
 
@@ -247,7 +247,7 @@ app.MapPut("/api/investments/{id}",
 app.MapGet("/api/investments/{id:guid}",
     ([FromRoute] Guid id,
      HttpContext ctx,
-     IInvestmentEditQuery query) =>
+     IInvestmentDetailQuery query) =>
     {
         var userId = ctx.GetUserId();
         if (userId is null)

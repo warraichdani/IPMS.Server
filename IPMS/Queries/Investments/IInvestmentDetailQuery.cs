@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace IPMS.Queries.Investments
 {
-    public interface IInvestmentEditQuery
+    public interface IInvestmentDetailQuery
     {
-        EditInvestmentDto? Get(Guid investmentId, Guid userId);
+        InvestmentDetailDto? Get(Guid investmentId, Guid userId);
     }
 }
