@@ -8,6 +8,7 @@ using IPMS.Models.DTOs;
 using IPMS.Models.DTOs.Investments;
 using IPMS.Models.Filters;
 using IPMS.Queries.Allocation;
+using IPMS.Queries.Dashboard;
 using IPMS.Queries.Investments;
 using IPMS.Queries.Performance;
 using IPMS.Queries.Transactions;
@@ -112,6 +113,8 @@ services.AddScoped<ITransactionQuery, TransactionQuery>();
 services.AddScoped<IInvestmentDetailQuery, InvestmentDetailQuery>();
 services.AddScoped<IUserTransactionQuery, UserTransactionQuery>();
 
+services.AddScoped<IUserDashboardQuery, UserDashboardQuery>();
+
 //----Charts Dependencies starts----
 
 services.AddScoped<IPerformanceQuery, PerformanceQuery>();
@@ -186,6 +189,21 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
     return Results.NoContent();
 })
 .RequireAuthorization("AdminPolicy");
+
+//-------------------User DashBoard----------------------------------------
+
+app.MapGet("/api/dashboard",
+    (HttpContext ctx, IUserDashboardQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var dashboard = query.Get(userId.Value);
+        return Results.Ok(dashboard);
+    })
+.RequireAuthorization("OwnerPolicy");
+
 
 //-------------------Investment CRUD-----------------------------------
 
