@@ -115,7 +115,7 @@ namespace IPMS.Core.Entities
 
             TotalUnits += units;
             CostBasis += amount;
-            CurrentUnitPrice = unitPrice;
+            //CurrentUnitPrice = unitPrice;
 
             var newTransaction = Transaction.Buy(
                 InvestmentId, amount, unitPrice, date, userId);
@@ -126,8 +126,9 @@ namespace IPMS.Core.Entities
         }
 
         // Behavior: Sell
-        public Transaction Sell(decimal unitsToSell, decimal unitPrice, DateOnly date, Guid userId)
+        public Transaction Sell(decimal amount, decimal unitPrice, DateOnly date, Guid userId)
         {
+            var unitsToSell = amount / unitPrice;
             if (unitsToSell > TotalUnits)
                 throw new InvalidOperationException("Cannot sell more units than owned.");
 
@@ -136,7 +137,7 @@ namespace IPMS.Core.Entities
 
             TotalUnits -= unitsToSell;
             CostBasis -= costRemoved;
-            CurrentUnitPrice = unitPrice;
+            //CurrentUnitPrice = unitPrice;
 
             var newTransaction = Transaction.Sell(
                 InvestmentId, unitsToSell, unitPrice, date, userId);

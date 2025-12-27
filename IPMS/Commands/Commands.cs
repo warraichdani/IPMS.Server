@@ -41,7 +41,7 @@ namespace IPMS.Commands
 
     public sealed record SellInvestmentCommand(
     Guid InvestmentId,
-    decimal UnitsToSell,
+    decimal Amount,
     decimal UnitPrice,
     DateOnly Date,
     Guid UserId);
