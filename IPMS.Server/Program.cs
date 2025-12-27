@@ -119,6 +119,7 @@ services.AddScoped<IUserDashboardQuery, UserDashboardQuery>();
 
 services.AddScoped<IPerformanceQuery, PerformanceQuery>();
 services.AddScoped<IAllocationQuery, AllocationQuery>();
+services.AddScoped<IPortfolioPerformanceQuery, PortfolioPerformanceQuery>();
 
 //----Charts Dependencies End-------
 var app = builder.Build();
@@ -470,5 +471,16 @@ app.MapGet("/api/portfolio/allocation",
         return Results.Ok(query.GetByUser(userId.Value));
     }).RequireAuthorization();
 
+
+app.MapGet("/api/dashboard/performance",
+    (HttpContext ctx, IPortfolioPerformanceQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        return Results.Ok(query.GetLast12Months(userId.Value));
+    })
+.RequireAuthorization();
 
 app.Run();
