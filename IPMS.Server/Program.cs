@@ -110,6 +110,7 @@ services.AddScoped<IInvestmentListQuery, InvestmentListQuery>();
 services.AddScoped<IInvestmentExportQuery, InvestmentExportQuery>();
 services.AddScoped<ITransactionQuery, TransactionQuery>();
 services.AddScoped<IInvestmentDetailQuery, InvestmentDetailQuery>();
+services.AddScoped<IUserTransactionQuery, UserTransactionQuery>();
 
 //----Charts Dependencies starts----
 
@@ -407,6 +408,28 @@ app.MapPost("/api/investments/update-price",
     })
 .RequireAuthorization();
 
+////--------------Transactions-----------------------
+
+app.MapGet("/api/transactions",
+    (HttpContext ctx,
+     [AsParameters] AllTransactionListFilter filter,
+     IUserTransactionQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var result = query.Get(userId.Value, filter);
+
+        return Results.Ok(new
+        {
+            Items = result.Items,
+            TotalCount = result.TotalCount,
+            Page = result.Page,
+            PageSize = result.PageSize
+        });
+    })
+.RequireAuthorization();
 
 ////--------------Charts-----------------------------
 app.MapGet("/api/investments/{id}/performance",
