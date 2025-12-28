@@ -80,20 +80,19 @@ namespace IPMS.Infrastructure.Repositories
 
         private User MapUser(SqlDataReader reader)
         {
-            return new User
-            {
-                UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
-                Email = reader.GetString(reader.GetOrdinal("Email")),
-                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                LastName = reader["LastName"] as string,
-                PasswordHash = (byte[])reader["PasswordHash"],
-                PasswordSalt = (byte[])reader["PasswordSalt"],
-                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
-                IsDeleted = reader.GetBoolean(reader.GetOrdinal("IsDeleted")),
-                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                UpdatedAt = reader["UpdatedAt"] as DateTime?,
-                EmailConfirmed  = reader.GetBoolean(reader.GetOrdinal("EmailConfirmed"))
-            };
+            return User.Rehydrate(
+                userId: reader.GetGuid(reader.GetOrdinal("UserId")),
+                email: reader.GetString(reader.GetOrdinal("Email")),
+                firstName: reader.GetString(reader.GetOrdinal("FirstName")),
+                lastName: reader["LastName"] as string,
+                passwordHash: (byte[])reader["PasswordHash"],
+                passwordSalt: (byte[])reader["PasswordSalt"],
+                isActive: reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                isDeleted: reader.GetBoolean(reader.GetOrdinal("IsDeleted")),
+                createdAt: reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+                updatedAt: reader["UpdatedAt"] as DateTime?,
+                emailConfirmed: reader.GetBoolean(reader.GetOrdinal("EmailConfirmed"))
+            );
         }
 
         public async Task<User?> GetByIdAsync(Guid userId)

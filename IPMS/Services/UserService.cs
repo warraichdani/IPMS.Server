@@ -33,16 +33,19 @@ namespace IPMS.Services
         public async Task<UserDto> RegisterAsync(RegisterUserDto dto)
         {
             using var hmac = new HMACSHA512();
-            var user = new User
-            {
-                UserId = Guid.NewGuid(),
-                Email = dto.Email,
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dto.Password)),
-                PasswordSalt = hmac.Key,
-                CreatedAt = DateTime.UtcNow
-            };
+            var user = User.Create(
+                dto.Email,
+                dto.FirstName,
+                dto.LastName,
+                dto.Password,
+                password =>
+                {
+                    using var hmac = new HMACSHA512();
+                    return (
+                        hmac.ComputeHash(Encoding.UTF8.GetBytes(password)),
+                        hmac.Key
+                    );
+                });
 
             await _repo.RegisterAsync(user);
 
