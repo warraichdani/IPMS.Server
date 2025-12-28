@@ -51,7 +51,7 @@ namespace IPMS.Services
                 Action: "BUY_INVESTMENT",
                 EntityType: "Investment",
                 EntityId: cmd.InvestmentId.ToString(),
-                Summary: "User bought investment units",
+                Summary: $"User bought units of amount {cmd.Amount} for his investment {investment.InvestmentName}",
                 Details: new { investment.TotalUnits, investment.CurrentUnitPrice },
                 IPAddress: string.Empty,
                 OccurredAt: DateTime.UtcNow

@@ -10,6 +10,7 @@ using IPMS.Infrastructure.Repositories.Application;
 using IPMS.Models.DTOs;
 using IPMS.Models.DTOs.Investments;
 using IPMS.Models.Filters;
+using IPMS.Queries.Activity;
 using IPMS.Queries.Allocation;
 using IPMS.Queries.Dashboard;
 using IPMS.Queries.Investments;
@@ -165,6 +166,7 @@ services.AddScoped<IInvestmentDetailQuery, InvestmentDetailQuery>();
 services.AddScoped<IUserTransactionQuery, UserTransactionQuery>();
 
 services.AddScoped<IUserDashboardQuery, UserDashboardQuery>();
+services.AddScoped<IRecentActivityQuery, RecentActivityQuery>();
 
 //----Charts Dependencies starts----
 
@@ -180,6 +182,8 @@ services.AddScoped<IActivityLogger, SqlActivityLogger>();
 
 var app = builder.Build();
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -556,5 +560,14 @@ app.MapGet("/api/dashboard/performance",
         return Results.Ok(query.GetLast12Months(userId.Value));
     })
 .RequireAuthorization();
+
+//-------------------ActivityLogs----------------------------
+app.MapGet("/api/activities/recent",
+    async (IRecentActivityQuery query) =>
+    {
+        var activities = await query.GetRecent(10);
+        return Results.Ok(activities);
+    })
+.RequireAuthorization("AdminPolicy");
 
 app.Run();

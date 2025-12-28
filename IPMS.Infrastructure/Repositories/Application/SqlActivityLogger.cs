@@ -11,7 +11,7 @@ namespace IPMS.Infrastructure.Repositories.Application
 
         public SqlActivityLogger(IConfiguration config)
         {
-            _connectionString = config.GetConnectionString("Default")!;
+            _connectionString = config.GetConnectionString("DefaultConnection")!;
         }
 
         public async Task LogAsync(ActivityEntry entry)
