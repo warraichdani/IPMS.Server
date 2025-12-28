@@ -12,6 +12,7 @@ namespace IPMS.Core.Entities
         public decimal UnitPrice { get; private set; }
         public DateOnly TransactionDate { get; private set; }
         public Guid CreatedByUserId { get; private set; }
+        public bool IsDeleted { get; private set; }
 
         private Transaction() { }
 
@@ -22,7 +23,8 @@ namespace IPMS.Core.Entities
     decimal units,
     decimal unitPrice,
     DateOnly date,
-    Guid createdBy)
+    Guid createdBy,
+    bool isDeleted)
         {
             TransactionId = transactionId;
             InvestmentId = investmentId;
@@ -31,6 +33,15 @@ namespace IPMS.Core.Entities
             UnitPrice = unitPrice;
             TransactionDate = date;
             CreatedByUserId = createdBy;
+            IsDeleted = isDeleted;
+        }
+
+        internal void SoftDelete()
+        {
+            if (IsDeleted)
+                return;
+
+            IsDeleted = true;
         }
 
         internal static Transaction Buy(

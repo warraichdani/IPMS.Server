@@ -108,19 +108,6 @@ namespace IPMS.Infrastructure.Repositories
             return result;
         }
 
-        // Soft delete an investment
-        public void SoftDelete(Guid investmentId)
-        {
-            const string sql = @"
-        UPDATE Investments
-        SET IsDeleted = 1
-        WHERE InvestmentId = @InvestmentId";
-
-            using var cmd = new SqlCommand(sql, _connection, _transaction);
-            cmd.Parameters.AddWithValue("@InvestmentId", investmentId);
-            cmd.ExecuteNonQuery();
-        }
-
         // Update an investment (e.g., TotalUnits, CostBasis, LastTransactionId)
         public void Update(Investment investment)
         {
@@ -135,7 +122,8 @@ namespace IPMS.Infrastructure.Repositories
             CostBasis = @CostBasis,
             LastTransactionId = @LastTransactionId,
             Broker = @Broker,
-            Notes = @Notes
+            Notes = @Notes,
+            isDeleted = @IsDeleted
         WHERE InvestmentId = @InvestmentId";
 
             using var cmd = new SqlCommand(sql, _connection, _transaction);
@@ -149,10 +137,47 @@ namespace IPMS.Infrastructure.Repositories
             cmd.Parameters.AddNullable("@LastTransactionId", investment.LastTransactionId);
             cmd.Parameters.AddNullable("@Broker", investment.Broker);
             cmd.Parameters.AddNullable("@Notes", investment.Notes);
+            cmd.Parameters.AddNullable("@IsDeleted", investment.IsDeleted);
             cmd.Parameters.AddWithValue("@InvestmentId", investment.InvestmentId);
 
             cmd.ExecuteNonQuery();
+
+            foreach (var tx in investment.Transactions)
+            {
+                UpdateTransaction(tx);
+            }
         }
+
+        private void UpdateTransaction(Transaction transaction)
+        {
+            const string sql = @"
+            UPDATE dbo.Transactions
+            SET
+                InvestmentId = @InvestmentId,
+                TransactionType = @TransactionType,
+                Units = @Units,
+                UnitPrice = @UnitPrice,
+                TransactionDate = @TransactionDate,
+                CreatedByUserId = @CreatedByUserId,
+                IsDeleted = @IsDeleted
+            WHERE TransactionId = @TransactionId;";
+
+            using var cmd = new SqlCommand(sql, _connection, _transaction);
+
+            cmd.Parameters.AddWithValue("@TransactionId", transaction.TransactionId);
+            cmd.Parameters.AddWithValue("@InvestmentId", transaction.InvestmentId);
+            cmd.Parameters.AddWithValue("@TransactionType", transaction.Type.Value);
+            cmd.Parameters.AddWithValue("@Units", transaction.Units);
+            cmd.Parameters.AddWithValue("@UnitPrice", transaction.UnitPrice);
+            cmd.Parameters.AddWithValue(
+                "@TransactionDate",
+                transaction.TransactionDate.ToDateTime(TimeOnly.MinValue));
+            cmd.Parameters.AddWithValue("@CreatedByUserId", transaction.CreatedByUserId);
+            cmd.Parameters.AddWithValue("@IsDeleted", transaction.IsDeleted);
+
+            cmd.ExecuteNonQuery();
+        }
+
 
         private static Investment MapInvestment(SqlDataReader reader)
         {
@@ -168,7 +193,8 @@ namespace IPMS.Infrastructure.Repositories
                 reader.GetDecimal(reader.GetOrdinal("CostBasis")),
                 reader.GetGuid(reader.GetOrdinal("LastTransactionId")),
                 reader.GetString(reader.GetOrdinal("Broker")),
-                reader.GetString(reader.GetOrdinal("Notes"))
+                reader.GetString(reader.GetOrdinal("Notes")),
+                reader.GetBoolean(reader.GetOrdinal("IsDeleted"))
             );
         }
 
@@ -181,7 +207,8 @@ namespace IPMS.Infrastructure.Repositories
                 reader.GetDecimal("Units"),
                 reader.GetDecimal("UnitPrice"),
                 DateOnly.FromDateTime(reader.GetDateTime("TransactionDate")),
-                reader.GetGuid("CreatedByUserId")
+                reader.GetGuid("CreatedByUserId"),
+                reader.GetBoolean("IsDeleted")
             );
         }
     }

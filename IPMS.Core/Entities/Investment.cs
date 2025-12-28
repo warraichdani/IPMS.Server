@@ -46,7 +46,8 @@ namespace IPMS.Core.Entities
     decimal costBasis,
     Guid lastTransactionId,
     string broker,
-    string notes)
+    string notes,
+    bool isDeleted)
         {
             InvestmentId = investmentId;
             UserId = userId;
@@ -60,6 +61,7 @@ namespace IPMS.Core.Entities
             LastTransactionId = lastTransactionId;
             Broker = broker;
             Notes = notes;
+            IsDeleted = isDeleted;
         }
         // Factory (important in DDD)
         public static Investment Create(
@@ -198,6 +200,11 @@ namespace IPMS.Core.Entities
             IsDeleted = true;
             Status = InvestmentStatus.Sold; // or Archived if you add later
             UpdatedAt = DateTime.UtcNow;
+
+            foreach (var transaction in _transactions)
+            {
+                transaction.SoftDelete();
+            }
         }
 
 

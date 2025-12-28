@@ -104,7 +104,8 @@ namespace IPMS.Infrastructure.Repositories
                 reader.GetDecimal(reader.GetOrdinal("Units")),
                 reader.GetDecimal(reader.GetOrdinal("UnitPrice")),
                 DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("TransactionDate"))),
-                reader.GetGuid(reader.GetOrdinal("CreatedByUserId"))
+                reader.GetGuid(reader.GetOrdinal("CreatedByUserId")),
+                reader.GetBoolean(reader.GetOrdinal("IsDeleted"))
             );
         }
     }

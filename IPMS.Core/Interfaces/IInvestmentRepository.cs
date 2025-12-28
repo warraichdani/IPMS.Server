@@ -12,7 +12,5 @@ public interface IInvestmentRepository
 
     void Update(Investment investment);
 
-    void SoftDelete(Guid investmentId);
-
     bool Exists(Guid investmentId);
 }

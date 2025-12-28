@@ -193,10 +193,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+#region Configurations
 app.MapGet("/api/configurations", (IIPMSConfigService service) =>
 {
     return Results.Ok(service.GetConfigs());
 });
+#endregion
+//--------------User and Authentication----------------------
+#region User and Authentication
 
 app.MapPost("/api/users/register", async (RegisterUserDto dto, IUserService service) =>
 {
@@ -268,9 +272,9 @@ app.MapGet("/api/system/statistics",
         return Results.Ok(stats);
     })
 .RequireAuthorization("AdminPolicy");
-
+#endregion
 //-------------------User DashBoard----------------------------------------
-
+#region User DashBoard
 app.MapGet("/api/dashboard",
     (HttpContext ctx, IUserDashboardQuery query) =>
     {
@@ -282,10 +286,10 @@ app.MapGet("/api/dashboard",
         return Results.Ok(dashboard);
     })
 .RequireAuthorization("OwnerPolicy");
-
+#endregion
 
 //-------------------Investment CRUD-----------------------------------
-
+#region Investment CRUD
 app.MapPost("/api/investments",
     (CreateInvestmentCommand cmd,
      HttpContext ctx,
@@ -386,40 +390,41 @@ app.MapGet("/api/investments/{id}/transactions",
     })
 .RequireAuthorization();
 
-//app.MapDelete("/api/investments/{id:guid}",
-//    ([FromRoute] Guid id,
-//     HttpContext ctx,
-//     IDeleteInvestmentService service) =>
-//    {
-//        var userId = ctx.GetUserId();
-//        if (userId is null)
-//            return Results.Unauthorized();
+app.MapDelete("/api/investments/{id:guid}",
+    ([FromRoute] Guid id,
+     HttpContext ctx,
+     IDeleteInvestmentService service) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
 
-//        service.Execute(id, userId.Value);
-//        return Results.NoContent();
-//    })
-//.RequireAuthorization();
+        service.Execute(id, userId.Value);
+        return Results.NoContent();
+    })
+.RequireAuthorization();
 
-//app.MapDelete("/investments",
-//    ([AsParameters] DeleteInvestmentsRequest request,
-//     HttpContext ctx,
-//     IDeleteInvestmentsService service) =>
-//    {
-//        var userId = ctx.GetUserId();
-//        if (userId is null)
-//            return Results.Unauthorized();
+app.MapPost("/api/investments/bulkdelete",
+    ([FromBody] DeleteInvestmentsRequest request,
+     HttpContext ctx,
+     IDeleteInvestmentsService service) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
 
-//        service.Execute(new DeleteInvestmentsCommand(
-//            request.InvestmentIds,
-//            userId.Value));
+        service.Execute(new DeleteInvestmentsCommand(
+            request.InvestmentIds,
+            userId.Value));
 
-//        return Results.NoContent();
-//    })
-//.RequireAuthorization();
+        return Results.NoContent();
+    })
+.RequireAuthorization();
 
+#endregion
 
 ////----------------Investments Export to CSV----------------------
-
+#region Investments Export to CSV
 app.MapGet("/api/investments/export",
     ([AsParameters] InvestmentListFilter filter,
      HttpContext ctx,
@@ -460,9 +465,9 @@ app.MapGet("/api/investments/export",
             $"investments_{DateTime.UtcNow:yyyyMMdd}.csv");
     })
 .RequireAuthorization();
-
+#endregion
 ////----------------Investments Behaviour----------------------
-
+#region Investments Behaviour
 app.MapPost("/api/investments/buy",
     (BuyInvestmentCommand cmd,
      HttpContext ctx,
@@ -504,9 +509,9 @@ app.MapPost("/api/investments/update-price",
         return Results.Ok(response);
     })
 .RequireAuthorization();
-
+#endregion
 ////--------------Transactions-----------------------
-
+#region Transactions
 app.MapGet("/api/transactions",
     (HttpContext ctx,
      [AsParameters] AllTransactionListFilter filter,
@@ -527,8 +532,9 @@ app.MapGet("/api/transactions",
         });
     })
 .RequireAuthorization();
-
+#endregion
 ////--------------Charts-----------------------------
+#region Charts
 app.MapGet("/api/investments/{id}/performance",
     (HttpContext ctx, Guid id, IPerformanceQuery query) =>
     {
@@ -550,6 +556,7 @@ app.MapGet("/api/portfolio/allocation",
     }).RequireAuthorization();
 
 
+
 app.MapGet("/api/dashboard/performance",
     (HttpContext ctx, IPortfolioPerformanceQuery query) =>
     {
@@ -560,8 +567,9 @@ app.MapGet("/api/dashboard/performance",
         return Results.Ok(query.GetLast12Months(userId.Value));
     })
 .RequireAuthorization();
-
+#endregion
 //-------------------ActivityLogs----------------------------
+#region ActivityLogs
 app.MapGet("/api/activities/recent",
     async (IRecentActivityQuery query) =>
     {
@@ -569,5 +577,6 @@ app.MapGet("/api/activities/recent",
         return Results.Ok(activities);
     })
 .RequireAuthorization("AdminPolicy");
+#endregion
 
 app.Run();
