@@ -85,13 +85,12 @@ CREATE TABLE dbo.Transactions (
     CONSTRAINT CK_Transaction_Date_NotFuture CHECK (TransactionDate <= CAST(SYSUTCDATETIME() AS DATE))
 );
 
-ALTER TABLE Transactions DROP COLUMN Amount;
-
 CREATE TABLE dbo.PriceHistory (
     PriceHistoryId UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
     InvestmentId UNIQUEIDENTIFIER NOT NULL,
     PriceDate DATE NOT NULL,
     UnitPrice DECIMAL(18,4) NOT NULL,
+	CreatedAt      DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
     CONSTRAINT FK_PriceHistory_Investment FOREIGN KEY (InvestmentId) REFERENCES dbo.Investments(InvestmentId),
     CONSTRAINT CK_PriceHistory_UnitPrice_Positive CHECK (UnitPrice > 0)
 );

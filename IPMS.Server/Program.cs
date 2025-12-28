@@ -1,5 +1,6 @@
 using IPMS.Commands;
 using IPMS.Core;
+using IPMS.Core.Application.Repositories;
 using IPMS.Core.Interfaces;
 using IPMS.Core.Repositories;
 using IPMS.Infrastructure;
@@ -133,6 +134,7 @@ services.AddScoped<IUserRepository, UserRepository>();
 services.AddScoped<IInvestmentRepository, InvestmentRepository>();
 services.AddScoped<ITransactionRepository, TransactionRepository>();
 services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
+services.AddScoped<ISystemStatisticsRepository, SystemStatisticsRepository>();
 
 // ----------------------------
 // Unit of Work
@@ -149,6 +151,7 @@ services.AddScoped<ICreateInvestmentService, CreateInvestmentService>();
 services.AddScoped<IUpdateInvestmentService, UpdateInvestmentService>();
 services.AddScoped<IDeleteInvestmentService, DeleteInvestmentService>();
 services.AddScoped<IDeleteInvestmentsService, DeleteInvestmentsService>();
+services.AddScoped<ISystemStatisticsService, SystemStatisticsService>();
 
 // ----------------------------
 // Queries
@@ -247,6 +250,13 @@ app.MapPut("/api/users/{userId:guid}/toggle-active",
     })
 .RequireAuthorization("AdminPolicy");
 
+app.MapGet("/api/system/statistics",
+    async (ISystemStatisticsService service) =>
+    {
+        var stats = await service.GetAsync();
+        return Results.Ok(stats);
+    })
+.RequireAuthorization("AdminPolicy");
 
 //-------------------User DashBoard----------------------------------------
 

@@ -53,3 +53,5 @@
     FROM Roles
 	WHERE Name IN ('Admin');
     --WHERE Name IN ('Admin', 'User');
+
+
