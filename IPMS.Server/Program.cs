@@ -1,10 +1,12 @@
 using IPMS.Commands;
 using IPMS.Core;
+using IPMS.Core.Application.Activity;
 using IPMS.Core.Application.Repositories;
 using IPMS.Core.Interfaces;
 using IPMS.Core.Repositories;
 using IPMS.Infrastructure;
 using IPMS.Infrastructure.Repositories;
+using IPMS.Infrastructure.Repositories.Application;
 using IPMS.Models.DTOs;
 using IPMS.Models.DTOs.Investments;
 using IPMS.Models.Filters;
@@ -171,6 +173,11 @@ services.AddScoped<IAllocationQuery, AllocationQuery>();
 services.AddScoped<IPortfolioPerformanceQuery, PortfolioPerformanceQuery>();
 
 //----Charts Dependencies End-------
+
+//--------Activities----------------
+
+services.AddScoped<IActivityLogger, SqlActivityLogger>();
+
 var app = builder.Build();
 app.UseCors("AllowFrontend");
 
