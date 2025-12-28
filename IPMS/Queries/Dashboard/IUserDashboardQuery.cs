@@ -9,6 +9,6 @@ namespace IPMS.Queries.Dashboard
 {
     public interface IUserDashboardQuery
     {
-        DashboardSummaryDto Get(Guid userId);
+        Task<DashboardSummaryDto> Get(Guid userId);
     }
 }

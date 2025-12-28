@@ -13,7 +13,7 @@ namespace IPMS.Queries.Dashboard
             _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
-        public DashboardSummaryDto Get(Guid userId)
+        public async Task<DashboardSummaryDto> Get(Guid userId)
         {
             const string sql = @"
 WITH InvestmentStats AS (
@@ -33,34 +33,17 @@ WITH InvestmentStats AS (
       AND IsDeleted = 0
 )
 SELECT
-    -- Portfolio totals
     SUM(CurrentValue) AS TotalCurrentValue,
     SUM(GainLoss) AS TotalGainLoss,
     CASE 
         WHEN SUM(CostBasis) = 0 THEN 0
         ELSE (SUM(GainLoss) / SUM(CostBasis)) * 100
     END AS TotalGainLossPercent,
-
-    -- Active investments count
     SUM(CASE WHEN Status = 'Active' THEN 1 ELSE 0 END) AS ActiveCount,
-
-    -- Best performer
-    (SELECT TOP 1 InvestmentName
-     FROM InvestmentStats
-     ORDER BY GainLossPercent DESC) AS BestPerformerName,
-
-    (SELECT TOP 1 GainLossPercent
-     FROM InvestmentStats
-     ORDER BY GainLossPercent DESC) AS BestPerformerGain,
-
-    -- Worst performer
-    (SELECT TOP 1 InvestmentName
-     FROM InvestmentStats
-     ORDER BY GainLossPercent ASC) AS WorstPerformerName,
-
-    (SELECT TOP 1 GainLossPercent
-     FROM InvestmentStats
-     ORDER BY GainLossPercent ASC) AS WorstPerformerGain
+    (SELECT TOP 1 InvestmentName FROM InvestmentStats ORDER BY GainLossPercent DESC) AS BestPerformerName,
+    (SELECT TOP 1 GainLossPercent FROM InvestmentStats ORDER BY GainLossPercent DESC) AS BestPerformerGain,
+    (SELECT TOP 1 InvestmentName FROM InvestmentStats ORDER BY GainLossPercent ASC) AS WorstPerformerName,
+    (SELECT TOP 1 GainLossPercent FROM InvestmentStats ORDER BY GainLossPercent ASC) AS WorstPerformerGain
 FROM InvestmentStats;
 ";
 
@@ -71,21 +54,30 @@ FROM InvestmentStats;
             cmd.Parameters.AddWithValue("@UserId", userId);
 
             using var reader = cmd.ExecuteReader();
+
             if (!reader.Read())
             {
-                return new DashboardSummaryDto(
-                    0, 0, 0, 0, null, null, null, null);
+                return DashboardSummaryDto.Empty();
             }
 
+            int ordTotalValue = reader.GetOrdinal("TotalCurrentValue");
+            int ordTotalGain = reader.GetOrdinal("TotalGainLoss");
+            int ordTotalGainPct = reader.GetOrdinal("TotalGainLossPercent");
+            int ordActiveCount = reader.GetOrdinal("ActiveCount");
+            int ordBestName = reader.GetOrdinal("BestPerformerName");
+            int ordBestGain = reader.GetOrdinal("BestPerformerGain");
+            int ordWorstName = reader.GetOrdinal("WorstPerformerName");
+            int ordWorstGain = reader.GetOrdinal("WorstPerformerGain");
+
             return new DashboardSummaryDto(
-                reader.GetDecimal(0),
-                reader.GetDecimal(1),
-                reader.GetDecimal(2),
-                reader.GetInt32(3),
-                reader.IsDBNull(4) ? null : reader.GetString(4),
-                reader.IsDBNull(5) ? null : reader.GetDecimal(5),
-                reader.IsDBNull(6) ? null : reader.GetString(6),
-                reader.IsDBNull(7) ? null : reader.GetDecimal(7)
+                reader.IsDBNull(ordTotalValue) ? 0m : reader.GetDecimal(ordTotalValue),
+                reader.IsDBNull(ordTotalGain) ? 0m : reader.GetDecimal(ordTotalGain),
+                reader.IsDBNull(ordTotalGainPct) ? 0m : reader.GetDecimal(ordTotalGainPct),
+                reader.IsDBNull(ordActiveCount) ? 0 : reader.GetInt32(ordActiveCount),
+                reader.IsDBNull(ordBestName) ? null : reader.GetString(ordBestName),
+                reader.IsDBNull(ordBestGain) ? null : reader.GetDecimal(ordBestGain),
+                reader.IsDBNull(ordWorstName) ? null : reader.GetString(ordWorstName),
+                reader.IsDBNull(ordWorstGain) ? null : reader.GetDecimal(ordWorstGain)
             );
         }
     }

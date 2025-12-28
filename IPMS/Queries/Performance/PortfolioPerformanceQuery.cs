@@ -39,8 +39,8 @@ namespace IPMS.Queries.Performance
                     t.InvestmentId,
                     SUM(
                         CASE t.TransactionType
-                            WHEN 'BuyMore' THEN t.Units
-                            WHEN 'PartialSell' THEN -t.Units
+                            WHEN 'Buy' THEN t.Units
+                            WHEN 'Sell' THEN -t.Units
                         END
                     ) AS UnitsOwned
                 FROM Months m

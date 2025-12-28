@@ -275,14 +275,14 @@ app.MapGet("/api/system/statistics",
 #endregion
 //-------------------User DashBoard----------------------------------------
 #region User DashBoard
-app.MapGet("/api/dashboard",
+app.MapGet("/api/dashboard", async
     (HttpContext ctx, IUserDashboardQuery query) =>
     {
         var userId = ctx.GetUserId();
         if (userId is null)
             return Results.Unauthorized();
 
-        var dashboard = query.Get(userId.Value);
+        var dashboard = await query.Get(userId.Value);
         return Results.Ok(dashboard);
     })
 .RequireAuthorization("OwnerPolicy");
@@ -496,7 +496,7 @@ app.MapPost("api/investments/sell", async (
     return Results.Ok(transactionDto);
 }).RequireAuthorization();
 
-app.MapPost("/api/investments/update-price",
+app.MapPost("/api/investments/update-price", async
     (UpdatePriceCommand cmd,
      HttpContext ctx,
      IUpdatePriceService service) =>
