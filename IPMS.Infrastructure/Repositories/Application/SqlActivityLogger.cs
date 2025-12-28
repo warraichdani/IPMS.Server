@@ -39,6 +39,14 @@ VALUES
             await conn.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
         }
+
+        public async Task LogAsync(List<ActivityEntry> list)
+        {
+            foreach (var activity in list)
+            {
+                LogAsync(activity);
+            }
+        }
     }
 
 }

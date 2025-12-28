@@ -1,5 +1,6 @@
 ﻿using IPMS.Commands;
 using IPMS.Core;
+using IPMS.Core.Application.Activity;
 using IPMS.Core.Entities;
 using IPMS.Core.Repositories;
 using IPMS.Models.DTOs;
@@ -16,15 +17,18 @@ namespace IPMS.Services
         private readonly IInvestmentRepository _investmentRepo;
         private readonly IPriceHistoryRepository _priceRepo;
         private readonly IUnitOfWork _uow;
+        private readonly IActivityLogger _activity;
 
         public UpdatePriceService(
             IInvestmentRepository investmentRepo,
             IPriceHistoryRepository priceRepo,
-            IUnitOfWork uow)
+            IUnitOfWork uow,
+            IActivityLogger activity)
         {
             _investmentRepo = investmentRepo;
             _priceRepo = priceRepo;
             _uow = uow;
+            _activity = activity;
         }
 
         public UpdatePriceResponse Execute(UpdatePriceCommand cmd)
@@ -45,6 +49,17 @@ namespace IPMS.Services
                 investment.CurrentUnitPrice));
 
             _uow.Commit();
+
+            _activity.LogAsync(new ActivityEntry(
+                ActorUserId: cmd.UserId,
+                Action: "Update_INVESTMENT",
+                EntityType: "Investment",
+                EntityId: cmd.InvestmentId.ToString(),
+                Summary: $"User Updated the investment amount to {cmd.Amount} for his investment {investment.InvestmentName}",
+                Details: new { investment.TotalUnits, investment.CurrentUnitPrice },
+                IPAddress: string.Empty,
+                OccurredAt: DateTime.UtcNow
+            ));
 
             return new UpdatePriceResponse(
                 cmd.InvestmentId,

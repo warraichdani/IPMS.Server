@@ -405,7 +405,7 @@ app.MapDelete("/api/investments/{id:guid}",
 .RequireAuthorization();
 
 app.MapPost("/api/investments/bulkdelete",
-    ([FromBody] DeleteInvestmentsRequest request,
+    async ([FromBody] DeleteInvestmentsRequest request,
      HttpContext ctx,
      IDeleteInvestmentsService service) =>
     {
@@ -413,7 +413,7 @@ app.MapPost("/api/investments/bulkdelete",
         if (userId is null)
             return Results.Unauthorized();
 
-        service.Execute(new DeleteInvestmentsCommand(
+        await service.Execute(new DeleteInvestmentsCommand(
             request.InvestmentIds,
             userId.Value));
 

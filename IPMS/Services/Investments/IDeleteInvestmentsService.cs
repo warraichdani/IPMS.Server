@@ -4,6 +4,6 @@ namespace IPMS.Services.Investments
 {
     public interface IDeleteInvestmentsService
     {
-        void Execute(DeleteInvestmentsCommand command);
+        Task Execute(DeleteInvestmentsCommand command);
     }
 }
