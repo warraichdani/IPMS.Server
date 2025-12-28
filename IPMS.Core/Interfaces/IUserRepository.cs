@@ -25,5 +25,6 @@ namespace IPMS.Core.Interfaces
         Task RemoveRefreshTokenAsync(Guid userId, string refreshToken);
         Task<bool> ExistsAsync(Guid userId);
         Task ToggleActiveAsync(Guid userId);
+        Task<bool> EmailExistsAsync(string email);
     }
 }

@@ -382,6 +382,25 @@ namespace IPMS.Infrastructure.Repositories
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task<bool> EmailExistsAsync(string email)
+        {
+            const string sql = @"
+                SELECT 1
+                FROM Users
+                WHERE Email = @Email AND IsDeleted = 0";
+
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, conn);
+
+            cmd.Parameters.AddWithValue("@Email", email);
+
+            conn.Open();
+            var result = await cmd.ExecuteScalarAsync();
+
+            return result != null;
+        }
+
+
         /// <summary>
         /// Helper method to get RoleId by role name.
         /// </summary>
@@ -413,7 +432,6 @@ namespace IPMS.Infrastructure.Repositories
             var exists = (int)await cmd.ExecuteScalarAsync();
             return exists > 0;
         }
-
     }
 }
 

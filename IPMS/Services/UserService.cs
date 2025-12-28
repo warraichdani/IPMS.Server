@@ -1,4 +1,5 @@
-﻿using IPMS.Core.Entities;
+﻿using IPMS.Core.Domain.Users;
+using IPMS.Core.Entities;
 using IPMS.Core.Interfaces;
 using IPMS.Models.DTOs;
 using IPMS.Models.Filters;
@@ -32,6 +33,9 @@ namespace IPMS.Services
 
         public async Task<UserDto> RegisterAsync(RegisterUserDto dto)
         {
+            if (await _repo.EmailExistsAsync(dto.Email))
+                throw new DomainException("Email already registered.");
+
             using var hmac = new HMACSHA512();
             var user = User.Create(
                 dto.Email,
