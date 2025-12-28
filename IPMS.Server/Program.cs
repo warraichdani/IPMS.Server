@@ -19,6 +19,7 @@ using IPMS.Server.Models;
 using IPMS.Services;
 using IPMS.Services.Investments;
 using IPMS.Services.IPMS.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -44,6 +45,51 @@ services.AddAuthentication("Bearer")
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            // THIS is where token expiration is detected
+            OnAuthenticationFailed = async context =>
+            {
+                if (context.Exception is SecurityTokenExpiredException)
+                {
+                    context.NoResult();
+
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
+
+                    var payload = new
+                    {
+                        error = "token_expired",
+                        message = "Access token has expired"
+                    };
+
+                    await context.Response.WriteAsJsonAsync(payload);
+                }
+            },
+
+            // Fallback for all other unauthorized cases
+            OnChallenge = context =>
+            {
+                // Prevent default HTML response
+                context.HandleResponse();
+
+                // If response already written (e.g. token_expired), do nothing
+                if (context.Response.HasStarted)
+                    return Task.CompletedTask;
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var payload = new
+                {
+                    error = "unauthorized",
+                    message = "Unauthorized access"
+                };
+
+                return context.Response.WriteAsJsonAsync(payload);
+            }
         };
     });
 
@@ -177,11 +223,13 @@ app.MapPost("/api/auth/logout", async (
 })
 .RequireAuthorization();
 
-app.MapGet("/api/users", async (IUserService service) =>
-{
-    var users = await service.GetAllAsync();
-    return Results.Ok(users);
-})
+app.MapGet("/api/users", async (
+    [AsParameters] UserListFilter filter,
+           IUserService service) =>
+    {
+        var result = await service.GetAllAsync(filter);
+        return Results.Ok(result);
+    })
 .RequireAuthorization("AdminPolicy");
 
 app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
@@ -190,6 +238,15 @@ app.MapDelete("/api/users/{id:guid}", async (Guid id, IUserService service) =>
     return Results.NoContent();
 })
 .RequireAuthorization("AdminPolicy");
+
+app.MapPut("/api/users/{userId:guid}/toggle-active",
+    async (Guid userId, IUserService service) =>
+    {
+        await service.ToggleActiveAsync(userId);
+        return Results.NoContent();
+    })
+.RequireAuthorization("AdminPolicy");
+
 
 //-------------------User DashBoard----------------------------------------
 

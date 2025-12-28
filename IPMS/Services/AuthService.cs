@@ -46,6 +46,12 @@ namespace IPMS.Services
                 return null;
             }
 
+            if (!user.IsActive)
+            {
+                _logger.LogWarning($"Login failed: user with email {dto.Email} email is inActive.");
+                return null;
+            }
+
             // Validate password
             using var hmac = new System.Security.Cryptography.HMACSHA512(user.PasswordSalt);
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dto.Password));

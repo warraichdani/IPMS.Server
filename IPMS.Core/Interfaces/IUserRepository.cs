@@ -1,10 +1,5 @@
 ﻿using IPMS.Core.Entities;
 using IPMS.Core.Entities.IPMS.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IPMS.Core.Interfaces
 {
@@ -28,5 +23,7 @@ namespace IPMS.Core.Interfaces
         Task AddUserRoleAsync(Guid userId, string roleName);
         Task RemoveUserRoleAsync(Guid userId, string roleName);
         Task RemoveRefreshTokenAsync(Guid userId, string refreshToken);
+        Task<bool> ExistsAsync(Guid userId);
+        Task ToggleActiveAsync(Guid userId);
     }
 }

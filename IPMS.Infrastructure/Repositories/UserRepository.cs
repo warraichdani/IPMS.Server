@@ -348,6 +348,41 @@ namespace IPMS.Infrastructure.Repositories
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task<bool> ExistsAsync(Guid userId)
+        {
+            const string sql = @"
+            SELECT COUNT(1)
+            FROM Users
+            WHERE UserId = @UserId
+              AND IsDeleted = 0;";
+
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, conn);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            await conn.OpenAsync();
+            return (int)await cmd.ExecuteScalarAsync()! > 0;
+        }
+
+        public async Task ToggleActiveAsync(Guid userId)
+        {
+            const string sql = @"
+            UPDATE Users
+            SET IsActive = CASE WHEN IsActive = 1 THEN 0 ELSE 1 END,
+                UpdatedAt = SYSUTCDATETIME()
+            WHERE UserId = @UserId
+              AND IsDeleted = 0;";
+
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, conn);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            await conn.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         /// <summary>
         /// Helper method to get RoleId by role name.
         /// </summary>
