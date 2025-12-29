@@ -1,4 +1,4 @@
---Create Database IPMS2
+
 
 CREATE TABLE dbo.Users (
     UserId          UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID() PRIMARY KEY,
