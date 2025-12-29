@@ -292,3 +292,24 @@ CLOSE investment_cursor;
 DEALLOCATE investment_cursor;
 
 
+INSERT INTO dbo.ActivityLog (
+    ActorUserId,
+    Action,
+    EntityType,
+    EntityId,
+    Summary,
+    OccurredAt
+)
+SELECT TOP 100
+    i.UserId,
+    'SeededTransaction',
+    'Investment',
+    CAST(i.InvestmentId AS NVARCHAR(100)),
+    CONCAT('Transaction activity for ', i.InvestmentName),
+    DATEADD(
+        DAY,
+        ABS(CHECKSUM(NEWID())) % DATEDIFF(DAY, @OneYearBack, @Today),
+        @OneYearBack
+    )
+FROM dbo.Investments i
+ORDER BY NEWID();
