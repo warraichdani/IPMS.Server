@@ -5,6 +5,7 @@ using IPMS.Core.Application.Repositories;
 using IPMS.Core.Interfaces;
 using IPMS.Core.Repositories;
 using IPMS.Infrastructure;
+using IPMS.Infrastructure.Database;
 using IPMS.Infrastructure.Repositories;
 using IPMS.Infrastructure.Repositories.Application;
 using IPMS.Models.DTOs;
@@ -120,6 +121,7 @@ services.AddAuthorization(options =>
 });
 
 services.AddSingleton<IIPMSConfigService, IPMSConfigService>();
+builder.Services.AddSingleton<DatabaseInitializer>();
 services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
 
 // ----------------------------
@@ -578,5 +580,11 @@ app.MapGet("/api/activities/recent",
     })
 .RequireAuthorization("AdminPolicy");
 #endregion
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbInit = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    await dbInit.InitializeAsync();
+}
 
 app.Run();

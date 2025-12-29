@@ -28,4 +28,13 @@
     <None Include="Configs\IPMSconfigs.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Scripts\01_schema.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Scripts\02_SeedScript.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
