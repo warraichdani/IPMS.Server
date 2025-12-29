@@ -7,10 +7,16 @@
 
 2: Make Sure .Net 9 is installed and SQL Server.
 
-3: Find SQLScript.sql file at the root of the repo and run as SQLServer Query.
+3: Run the application in your development environment and It will create and seed database itself on first run.
 
-4: Find SeedScript.sql file at the root of the repo and run it.
+5: this will generate an Admin user automatically.  
+# Login Credentials
+#admin user
+#Username: adminuser@mail.com 
+#password: 123456
 
-5: this will generate an Admin user automatically.
+#porfolio user
+#Username: user@mail.com
+#password: 123456
 
-6: Run the application and use IPMS frontend(https://github.com/warraichdani/ipms-frontend) for using this backend further details and credentials included in the script project are included in the readme of front end.
+6: use IPMS frontend(https://github.com/warraichdani/ipms-frontend) and above credentials to login as user or admin.
