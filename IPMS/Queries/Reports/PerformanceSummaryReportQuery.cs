@@ -17,7 +17,7 @@ namespace IPMS.Queries.Reports
 
         public async Task<PagedResult<PerformanceSummaryDto>> GetAsync(
             Guid userId,
-            PerformanceSummaryRangeRequest request)
+            ReportFiltersRequest request)
         {
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();

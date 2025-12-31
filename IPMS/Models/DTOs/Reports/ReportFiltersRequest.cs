@@ -1,6 +1,7 @@
 ﻿namespace IPMS.Models.DTOs.Reports
 {
-    public sealed record PerformanceSummaryRangeRequest(
+
+    public sealed record ReportFiltersRequest(
     string From,
     string To,
     IReadOnlyList<string>? InvestmentTypes,
@@ -12,5 +13,4 @@
         public DateOnly FromDate => DateOnly.Parse(From);
         public DateOnly ToDate => DateOnly.Parse(To);
     }
-
 }

@@ -598,7 +598,7 @@ app.MapGet("/api/activities/recent",
 
 app.MapPost("/api/reports/performance-summary",
     async (
-        [FromBody] PerformanceSummaryRangeRequest request,
+        [FromBody] ReportFiltersRequest request,
         HttpContext ctx,
         IPerformanceSummaryReportQuery service) =>
     {
@@ -613,7 +613,7 @@ app.MapPost("/api/reports/performance-summary",
 
 app.MapPost("/api/reports/performance-summary/export",
     async (
-        [FromBody] PerformanceSummaryRangeRequest filter,
+        [FromBody] ReportFiltersRequest filter,
         [FromQuery] string format,
         HttpContext ctx,
         IPerformanceSummaryReportQuery reportService,

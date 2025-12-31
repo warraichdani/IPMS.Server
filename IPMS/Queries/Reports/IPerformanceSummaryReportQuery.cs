@@ -7,6 +7,6 @@ namespace IPMS.Queries.Reports
     {
         Task<PagedResult<PerformanceSummaryDto>> GetAsync(
         Guid userId,
-        PerformanceSummaryRangeRequest request);
+        ReportFiltersRequest request);
     }
 }
