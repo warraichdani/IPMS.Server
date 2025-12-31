@@ -138,5 +138,35 @@ CREATE TABLE dbo.UserOtps (
 );
 
 
+CREATE OR ALTER FUNCTION dbo.fn_UnitsHeldAsOf
+(
+    @UserId UNIQUEIDENTIFIER,
+    @AsOfDate DATE,
+    @InvestmentId UNIQUEIDENTIFIER = NULL
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT
+        t.InvestmentId,
+        SUM(
+            CASE
+                WHEN t.TransactionType = 'Buy' THEN t.Units
+                WHEN t.TransactionType = 'Sell' THEN -t.Units
+                ELSE 0
+            END
+        ) AS TotalUnits
+    FROM Transactions t
+    JOIN Investments i ON i.InvestmentId = t.InvestmentId
+    WHERE i.UserId = @UserId
+      AND i.IsDeleted = 0
+      AND t.IsDeleted = 0
+      AND t.TransactionDate <= @AsOfDate
+      AND (@InvestmentId IS NULL OR t.InvestmentId = @InvestmentId)
+    GROUP BY t.InvestmentId
+);
+
+
 
 

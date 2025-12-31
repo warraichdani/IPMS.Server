@@ -10,13 +10,16 @@ using IPMS.Infrastructure.Repositories;
 using IPMS.Infrastructure.Repositories.Application;
 using IPMS.Models.DTOs;
 using IPMS.Models.DTOs.Investments;
+using IPMS.Models.DTOs.Reports;
 using IPMS.Models.Filters;
 using IPMS.Queries.Activity;
 using IPMS.Queries.Allocation;
 using IPMS.Queries.Dashboard;
 using IPMS.Queries.Investments;
 using IPMS.Queries.Performance;
+using IPMS.Queries.Reports;
 using IPMS.Queries.Transactions;
+using IPMS.Server.Converters;
 using IPMS.Server.Extensions;
 using IPMS.Server.Helpers;
 using IPMS.Server.MiddleWare;
@@ -24,6 +27,7 @@ using IPMS.Server.Models;
 using IPMS.Services;
 using IPMS.Services.Investments;
 using IPMS.Services.IPMS.Services;
+using IPMS.Services.Reports;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -120,6 +124,11 @@ services.AddAuthorization(options =>
         policy.RequireRole("Admin", "User"));
 });
 
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+});
+
 services.AddSingleton<IIPMSConfigService, IPMSConfigService>();
 builder.Services.AddSingleton<DatabaseInitializer>();
 services.AddScoped(typeof(IEventLogger<>), typeof(EventLogger<>));
@@ -169,6 +178,9 @@ services.AddScoped<IUserTransactionQuery, UserTransactionQuery>();
 
 services.AddScoped<IUserDashboardQuery, UserDashboardQuery>();
 services.AddScoped<IRecentActivityQuery, RecentActivityQuery>();
+
+services.AddScoped<IPerformanceSummaryReportQuery, PerformanceSummaryReportQuery>();
+services.AddScoped<IPerformanceSummaryExportService, PerformanceSummaryExportService>();
 
 //----Charts Dependencies starts----
 
@@ -223,9 +235,9 @@ app.MapPost("/api/auth/login", async (LoginRequestDto dto, IAuthService authServ
     return result is null ? Results.Unauthorized() : Results.Ok(result);
 });
 
-app.MapPost("/api/auth/refresh", async (string refreshToken, IAuthService authService) =>
+app.MapPost("/api/auth/refresh", async (RefreshTokenRequest request, IAuthService authService) =>
 {
-    var result = await authService.RefreshAsync(refreshToken);
+    var result = await authService.RefreshAsync(request.RefreshToken);
     return result is null ? Results.Unauthorized() : Results.Ok(result);
 });
 
@@ -427,7 +439,7 @@ app.MapPost("/api/investments/bulkdelete",
 
 ////----------------Investments Export to CSV----------------------
 #region Investments Export to CSV
-app.MapGet("/api/investments/export",
+app.MapGet("/api/investments/export", async
     ([AsParameters] InvestmentListFilter filter,
      HttpContext ctx,
      IInvestmentExportQuery query) =>
@@ -581,6 +593,56 @@ app.MapGet("/api/activities/recent",
 .RequireAuthorization("AdminPolicy");
 #endregion
 
+#region Reports
+//-------------------Reports---------------------------------
+
+app.MapPost("/api/reports/performance-summary",
+    async (
+        [FromBody] PerformanceSummaryRangeRequest request,
+        HttpContext ctx,
+        IPerformanceSummaryReportQuery service) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var result = await service.GetAsync(userId.Value, request);
+        return Results.Ok(result);
+    })
+.RequireAuthorization();
+
+app.MapPost("/api/reports/performance-summary/export",
+    async (
+        [FromBody] PerformanceSummaryRangeRequest filter,
+        [FromQuery] string format,
+        HttpContext ctx,
+        IPerformanceSummaryReportQuery reportService,
+        IPerformanceSummaryExportService exportService) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var data = await reportService.GetAsync(
+            userId.Value,
+            filter with { ExportAll = true });
+
+        FileExport file = format.ToLowerInvariant() switch
+        {
+            "csv" => exportService.ExportCsv(data.Items),
+            "json" => exportService.ExportJson(data.Items),
+            "pdf" => exportService.ExportPdfSimulation(data.Items),
+            _ => throw new InvalidOperationException("Unsupported export format")
+        };
+
+        return Results.File(
+            file.Content,
+            file.ContentType,
+            file.FileName);
+    })
+.RequireAuthorization();
+
+#endregion
 using (var scope = app.Services.CreateScope())
 {
     var dbInit = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();

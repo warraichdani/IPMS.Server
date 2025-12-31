@@ -60,4 +60,8 @@
     public sealed record AllocationDto(
         string InvestmentType,
         decimal Value);
+
+
 }
+
+
