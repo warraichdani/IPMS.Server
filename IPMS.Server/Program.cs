@@ -658,6 +658,26 @@ app.MapPost("/api/reports/monthlyPerformanceTrend",
     })
 .RequireAuthorization();
 
+app.MapPost("/api/reports/investment-distribution",
+    (HttpContext ctx,
+     ReportFiltersRequest filters,
+     IInvestmentDistributionQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var data = query.GetDistribution(
+            userId.Value,
+            filters.FromDate,
+            filters.ToDate
+        );
+
+        return Results.Ok(data);
+    })
+.RequireAuthorization();
+
+
 #endregion
 using (var scope = app.Services.CreateScope())
 {
