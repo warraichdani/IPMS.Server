@@ -181,6 +181,7 @@ services.AddScoped<IRecentActivityQuery, RecentActivityQuery>();
 
 services.AddScoped<IPerformanceSummaryReportQuery, PerformanceSummaryReportQuery>();
 services.AddScoped<IPerformanceSummaryExportService, PerformanceSummaryExportService>();
+services.AddScoped<IMonthlyPerformanceTrendQuery, MonthlyPerformanceTrendQuery>();
 
 //----Charts Dependencies starts----
 
@@ -639,6 +640,21 @@ app.MapPost("/api/reports/performance-summary/export",
             file.Content,
             file.ContentType,
             file.FileName);
+    })
+.RequireAuthorization();
+
+
+app.MapPost("/api/reports/monthlyPerformanceTrend",
+    (HttpContext ctx,
+     [FromBody] ReportFiltersRequest filters,
+     IMonthlyPerformanceTrendQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var result = query.GetMonthsPerformance(userId.Value, filters);
+        return Results.Ok(result);
     })
 .RequireAuthorization();
 

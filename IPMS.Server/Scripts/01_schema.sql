@@ -167,6 +167,11 @@ RETURN
     GROUP BY t.InvestmentId
 );
 
+------------------Indexes-----------------------------
 
+CREATE INDEX IX_Transactions_Investment_Date
+ON Transactions (InvestmentId, TransactionDate);
 
+CREATE INDEX IX_PriceHistory_Investment_Date
+ON PriceHistory (InvestmentId, PriceDate);
 
