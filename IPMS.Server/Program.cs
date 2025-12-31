@@ -166,6 +166,7 @@ services.AddScoped<IUpdateInvestmentService, UpdateInvestmentService>();
 services.AddScoped<IDeleteInvestmentService, DeleteInvestmentService>();
 services.AddScoped<IDeleteInvestmentsService, DeleteInvestmentsService>();
 services.AddScoped<ISystemStatisticsService, SystemStatisticsService>();
+services.AddScoped<IYoYAllocationReportExportService, YoYAllocationReportExportService>();
 
 // ----------------------------
 // Queries
@@ -182,6 +183,9 @@ services.AddScoped<IRecentActivityQuery, RecentActivityQuery>();
 services.AddScoped<IPerformanceSummaryReportQuery, PerformanceSummaryReportQuery>();
 services.AddScoped<IPerformanceSummaryExportService, PerformanceSummaryExportService>();
 services.AddScoped<IMonthlyPerformanceTrendQuery, MonthlyPerformanceTrendQuery>();
+services.AddScoped<IInvestmentDistributionQuery, InvestmentDistributionQuery>();
+services.AddScoped<IYearOverYearAllocationQuery, YearOverYearAllocationQuery>();
+
 
 //----Charts Dependencies starts----
 
@@ -660,7 +664,7 @@ app.MapPost("/api/reports/monthlyPerformanceTrend",
 
 app.MapPost("/api/reports/investment-distribution",
     (HttpContext ctx,
-     ReportFiltersRequest filters,
+     [FromBody] ReportFiltersRequest filters,
      IInvestmentDistributionQuery query) =>
     {
         var userId = ctx.GetUserId();
@@ -677,6 +681,44 @@ app.MapPost("/api/reports/investment-distribution",
     })
 .RequireAuthorization();
 
+app.MapGet("/api/reports/yoy-allocation",
+    (HttpContext ctx, IYearOverYearAllocationQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var rows = query.GetByUser(userId.Value);
+        return Results.Ok(new YoYAllocationReportDto(rows));
+    })
+.RequireAuthorization();
+
+app.MapPost("/api/reports/yoy-allocation/export",
+    (HttpContext ctx,
+     [FromQuery] string format,
+     IYearOverYearAllocationQuery query,
+     IYoYAllocationReportExportService exportService) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var rows = query.GetByUser(userId.Value);
+
+        FileExport file = format.ToLowerInvariant() switch
+        {
+            "csv" => exportService.ExportCsv(rows),
+            "json" => exportService.ExportJson(rows),
+            "pdf" => exportService.ExportPdf(rows),
+            _ => throw new InvalidOperationException("Unsupported export format")
+        };
+
+        return Results.File(
+            file.Content,
+            file.ContentType,
+            file.FileName);
+    })
+.RequireAuthorization();
 
 #endregion
 using (var scope = app.Services.CreateScope())
