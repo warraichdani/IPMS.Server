@@ -59,23 +59,14 @@ services.AddAuthentication("Bearer")
         options.Events = new JwtBearerEvents
         {
             // THIS is where token expiration is detected
-            OnAuthenticationFailed = async context =>
+            OnAuthenticationFailed = context =>
             {
                 if (context.Exception is SecurityTokenExpiredException)
                 {
-                    context.NoResult();
-
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    context.Response.ContentType = "application/json";
-
-                    var payload = new
-                    {
-                        error = "token_expired",
-                        message = "Access token has expired"
-                    };
-
-                    await context.Response.WriteAsJsonAsync(payload);
+                    context.HttpContext.Items["TokenExpired"] = true;
                 }
+
+                return Task.CompletedTask;
             },
 
             // Fallback for all other unauthorized cases
@@ -88,14 +79,22 @@ services.AddAuthentication("Bearer")
                 if (context.Response.HasStarted)
                     return Task.CompletedTask;
 
+                var isExpired = context.HttpContext.Items.ContainsKey("TokenExpired");
+
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
 
-                var payload = new
-                {
-                    error = "unauthorized",
-                    message = "Unauthorized access"
-                };
+                var payload = isExpired
+                    ? new
+                    {
+                        error = "token_expired",
+                        message = "Access token has expired"
+                    }
+                    : new
+                    {
+                        error = "unauthorized",
+                        message = "Unauthorized access"
+                    };
 
                 return context.Response.WriteAsJsonAsync(payload);
             }
