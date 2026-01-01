@@ -167,6 +167,7 @@ services.AddScoped<IDeleteInvestmentsService, DeleteInvestmentsService>();
 services.AddScoped<ISystemStatisticsService, SystemStatisticsService>();
 services.AddScoped<IYoYAllocationReportExportService, YoYAllocationReportExportService>();
 services.AddScoped<ITopPerformingInvestmentsExportService, TopPerformingInvestmentsExportService>();
+services.AddScoped<ITransactionHistoryReportExportService, TransactionHistoryReportExportService>();
 
 // ----------------------------
 // Queries
@@ -186,7 +187,7 @@ services.AddScoped<IMonthlyPerformanceTrendQuery, MonthlyPerformanceTrendQuery>(
 services.AddScoped<IInvestmentDistributionQuery, InvestmentDistributionQuery>();
 services.AddScoped<IYearOverYearAllocationQuery, YearOverYearAllocationQuery>();
 services.AddScoped<ITopPerformingInvestmentsQuery, TopPerformingInvestmentsQuery>();
-
+services.AddScoped<ITransactionHistoryReportQuery, TransactionHistoryReportQuery>();
 
 //----Charts Dependencies starts----
 
@@ -766,6 +767,47 @@ app.MapPost("/api/reports/top-performing-investments/export",
         );
     })
 .RequireAuthorization();
+
+app.MapPost("/api/reports/transactions",
+    ([FromBody] ReportFiltersRequest filters,
+     HttpContext ctx,
+     ITransactionHistoryReportQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        return Results.Ok(query.Get(userId.Value, filters));
+    })
+.RequireAuthorization();
+
+app.MapPost("/api/reports/transactions/export",
+    ([FromBody] ReportFiltersRequest filters,
+     string format,
+     HttpContext ctx,
+     ITransactionHistoryReportQuery query,
+     ITransactionHistoryReportExportService exporter) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        filters = filters with { ExportAll = true };
+
+        var rows = query.Get(userId.Value, filters).Items;
+
+        var file = format.ToLower() switch
+        {
+            "csv" => exporter.ExportCsv(rows),
+            "json" => exporter.ExportJson(rows),
+            "pdf" => exporter.ExportPdf(rows),
+            _ => throw new InvalidOperationException("Unsupported export format")
+        };
+
+        return Results.File(file.Content, file.ContentType, file.FileName);
+    })
+.RequireAuthorization();
+
 
 #endregion
 using (var scope = app.Services.CreateScope())
