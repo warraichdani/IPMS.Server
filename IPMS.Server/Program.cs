@@ -167,6 +167,7 @@ services.AddScoped<IDeleteInvestmentService, DeleteInvestmentService>();
 services.AddScoped<IDeleteInvestmentsService, DeleteInvestmentsService>();
 services.AddScoped<ISystemStatisticsService, SystemStatisticsService>();
 services.AddScoped<IYoYAllocationReportExportService, YoYAllocationReportExportService>();
+services.AddScoped<ITopPerformingInvestmentsExportService, TopPerformingInvestmentsExportService>();
 
 // ----------------------------
 // Queries
@@ -185,6 +186,7 @@ services.AddScoped<IPerformanceSummaryExportService, PerformanceSummaryExportSer
 services.AddScoped<IMonthlyPerformanceTrendQuery, MonthlyPerformanceTrendQuery>();
 services.AddScoped<IInvestmentDistributionQuery, InvestmentDistributionQuery>();
 services.AddScoped<IYearOverYearAllocationQuery, YearOverYearAllocationQuery>();
+services.AddScoped<ITopPerformingInvestmentsQuery, TopPerformingInvestmentsQuery>();
 
 
 //----Charts Dependencies starts----
@@ -717,6 +719,52 @@ app.MapPost("/api/reports/yoy-allocation/export",
             file.Content,
             file.ContentType,
             file.FileName);
+    })
+.RequireAuthorization();
+
+app.MapPost("/api/reports/top-performing-investments",
+    ([FromBody] ReportFiltersRequest filters,
+     HttpContext ctx,
+     ITopPerformingInvestmentsQuery query) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        var result = query.Get(userId.Value, filters);
+        return Results.Ok(result);
+    })
+.RequireAuthorization();
+
+app.MapPost("/api/reports/top-performing-investments/export",
+    ([FromBody] ReportFiltersRequest filters,
+     string format,
+     HttpContext ctx,
+     ITopPerformingInvestmentsQuery query,
+     ITopPerformingInvestmentsExportService exporter) =>
+    {
+        var userId = ctx.GetUserId();
+        if (userId is null)
+            return Results.Unauthorized();
+
+        // Force full dataset
+        filters = filters with { ExportAll = true };
+
+        var data = query.Get(userId.Value, filters).Items;
+
+        FileExport file = format.ToLower() switch
+        {
+            "csv" => exporter.ExportCsv(data),
+            "json" => exporter.ExportJson(data),
+            "pdf" => exporter.ExportPdf(data),
+            _ => throw new InvalidOperationException("Unsupported export format")
+        };
+
+        return Results.File(
+            file.Content,
+            file.ContentType,
+            file.FileName
+        );
     })
 .RequireAuthorization();
 
